@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+      sharedUserId="com.jogamp.Community" 
+      package="jogamp.android.launcher">
+
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+
+    <uses-permission android:name="android.permission.INTERNET" /> <!-- required for NV's PerfHud and I-Net data streaming -->
+    <!-- uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" / --> <!-- required for Android-Trace -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <uses-sdk android:minSdkVersion="9" android:targetSdkVersion="14"/>
+
+    <application android:icon="@drawable/icon" 
+                 android:label="@string/app_launcher_name"
+                 android:description="@string/app_launcher_descr"
+                 android:persistent="false"
+                 >
+        <activity android:name="jogamp.android.launcher.LauncherVersionActivity"
+                  android:finishOnTaskLaunch="true"
+                  android:launchMode="singleTop"
+                  android:label="@string/activity_l_name"
+                  android:description="@string/activity_l_descr"
+                  >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity android:name="jogamp.android.launcher.ActivityLauncher"
+                  android:finishOnTaskLaunch="false"
+                  android:launchMode="standard"
+                  android:configChanges="keyboardHidden|orientation|screenLayout"
+                  android:label="@string/activity_l_name"
+                  android:description="@string/activity_l_descr"
+                  android:exported="true"
+                  >
+            <intent-filter>
+                <action android:name="org.jogamp.launcher.action.LAUNCH_ACTIVITY_NORMAL" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="launch" android:host="jogamp.org"/>
+            </intent-filter>
+        </activity>
+        <activity android:name="jogamp.android.launcher.ActivityLauncher"
+                  android:finishOnTaskLaunch="false"
+                  android:launchMode="standard"
+                  android:configChanges="keyboardHidden|orientation|screenLayout"
+                  android:label="@string/activity_l_name"
+                  android:description="@string/activity_l_descr"
+                  android:exported="true"
+                  android:theme="@style/Theme.Transparent"
+                  >
+            <intent-filter>
+                <action android:name="org.jogamp.launcher.action.LAUNCH_ACTIVITY_TRANSPARENT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="launch" android:host="jogamp.org"/>
+            </intent-filter>
+        </activity>
+        <activity android:name="jogamp.android.launcher.MainLauncher"
+                  android:finishOnTaskLaunch="false"
+                  android:launchMode="standard"
+                  android:configChanges="keyboardHidden|orientation|screenLayout"
+                  android:label="@string/activity_l_name"
+                  android:description="@string/activity_l_descr"
+                  android:exported="true"
+                  >
+            <intent-filter>
+                <action android:name="org.jogamp.launcher.action.LAUNCH_MAIN" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="launch" android:host="jogamp.org"/>
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

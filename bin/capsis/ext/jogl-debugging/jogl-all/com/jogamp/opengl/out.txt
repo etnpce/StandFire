@@ -1,0 +1,17 @@
+Compiled from "GenericGLCapabilitiesChooser.java"
+public class com.jogamp.opengl.GenericGLCapabilitiesChooser extends javax.media.opengl.DefaultGLCapabilitiesChooser {
+  public com.jogamp.opengl.GenericGLCapabilitiesChooser();
+    Code:
+       0: aload_0
+       1: invokespecial #1                  // Method javax/media/opengl/DefaultGLCapabilitiesChooser."<init>":()V
+       4: return
+
+  public int chooseCapabilities(javax.media.nativewindow.CapabilitiesImmutable, java.util.List<? extends javax.media.nativewindow.CapabilitiesImmutable>, int);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: aload_2
+       3: iconst_m1
+       4: invokespecial #2                  // Method javax/media/opengl/DefaultGLCapabilitiesChooser.chooseCapabilities:(Ljavax/media/nativewindow/CapabilitiesImmutable;Ljava/util/List;I)I
+       7: ireturn
+}

@@ -1,0 +1,11 @@
+UNIT = lb., ft., %
+MoistContD1hr = 6
+MoistContD10hr = 7
+MoistContD100hr = 8
+MoistContHerb = 60
+MoistContWood = 90
+SAVD10hr = 109
+SAVD100hr = 30
+MineralCont = 5.55
+EffCont = 1
+OvendryPartDensity? = 32

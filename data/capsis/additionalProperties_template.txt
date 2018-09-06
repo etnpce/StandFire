@@ -1,0 +1,67 @@
+
+# Default additional properties file
+
+understoreyFuelOption=1
+
+{{({d[srf_blocks][1][0][0]},{d[srf_blocks][1][0][1]});({d[srf_blocks][1][1][0]},{d[srf_blocks][1][1][1]});({d[srf_blocks][1][2][0]},{d[srf_blocks][1][2][1]});({d[srf_blocks][1][3][0]},{d[srf_blocks][1][3][1]})}}	{{1;2}}	{{false;false}}
+{{({d[srf_blocks][2][0][0]},{d[srf_blocks][2][0][1]});({d[srf_blocks][2][1][0]},{d[srf_blocks][2][1][1]});({d[srf_blocks][2][2][0]},{d[srf_blocks][2][2][1]});({d[srf_blocks][2][3][0]},{d[srf_blocks][2][3][1]})}}	{{3;4}}	{{false;false}}
+{{({d[srf_blocks][3][0][0]},{d[srf_blocks][3][0][1]});({d[srf_blocks][3][1][0]},{d[srf_blocks][3][1][1]});({d[srf_blocks][3][2][0]},{d[srf_blocks][3][2][1]});({d[srf_blocks][3][3][0]},{d[srf_blocks][3][3][1]})}}	{{5;6}}	{{false;false}}
+{{({d[srf_blocks][4][0][0]},{d[srf_blocks][4][0][1]});({d[srf_blocks][4][1][0]},{d[srf_blocks][4][1][1]});({d[srf_blocks][4][2][0]},{d[srf_blocks][4][2][1]});({d[srf_blocks][4][3][0]},{d[srf_blocks][4][3][1]})}}	{{7;8}}	{{false;false}}
+{{({d[srf_blocks][5][0][0]},{d[srf_blocks][5][0][1]});({d[srf_blocks][5][1][0]},{d[srf_blocks][5][1][1]});({d[srf_blocks][5][2][0]},{d[srf_blocks][5][2][1]});({d[srf_blocks][5][3][0]},{d[srf_blocks][5][3][1]})}}	{{9;10}}	{{false;false}}
+{{({d[srf_blocks][6][0][0]},{d[srf_blocks][6][0][1]});({d[srf_blocks][6][1][0]},{d[srf_blocks][6][1][1]});({d[srf_blocks][6][2][0]},{d[srf_blocks][6][2][1]});({d[srf_blocks][6][3][0]},{d[srf_blocks][6][3][1]})}}	{{11}}	{{true}}
+
+1	Shrub	{d[srf_fuels][shrub][ht]}	{d[srf_fuels][shrub][cbh]}	{d[srf_fuels][shrub][cover]}	{d[srf_fuels][shrub][width]}	{d[srf_fuels][shrub][spat_group]}
+Leave_Live	{d[srf_fuels][shrub][live][load]}	{d[srf_fuels][shrub][live][mvr]}	{d[srf_fuels][shrub][live][svr]}	{d[srf_fuels][shrub][live][moisture]}
+Leave_Dead	{d[srf_fuels][shrub][dead][load]}	{d[srf_fuels][shrub][dead][mvr]}	{d[srf_fuels][shrub][dead][svr]}	{d[srf_fuels][shrub][dead][moisture]}
+2	Herb	{d[srf_fuels][herb][ht]}	{d[srf_fuels][herb][cbh]}	{d[srf_fuels][herb][cover]}	{d[srf_fuels][herb][width]}	{d[srf_fuels][herb][spat_group]}
+Leave_Live	{d[srf_fuels][herb][live][load]}	{d[srf_fuels][herb][live][mvr]}	{d[srf_fuels][herb][live][svr]}	{d[srf_fuels][herb][live][moisture]}
+Leave_Dead	{d[srf_fuels][herb][dead][load]}	{d[srf_fuels][herb][dead][mvr]}	{d[srf_fuels][herb][dead][svr]}	{d[srf_fuels][herb][dead][moisture]}
+
+3	Shrub	{d[srf_fuels][shrub][ht]}	{d[srf_fuels][shrub][cbh]}	{d[srf_fuels][shrub][cover]}	{d[srf_fuels][shrub][width]}	{d[srf_fuels][shrub][spat_group]}
+Leave_Live	{d[srf_fuels][shrub][live][load]}	{d[srf_fuels][shrub][live][mvr]}	{d[srf_fuels][shrub][live][svr]}	{d[srf_fuels][shrub][live][moisture]}
+Leave_Dead	{d[srf_fuels][shrub][dead][load]}	{d[srf_fuels][shrub][dead][mvr]}	{d[srf_fuels][shrub][dead][svr]}	{d[srf_fuels][shrub][dead][moisture]}
+4	Herb	{d[srf_fuels][herb][ht]}	{d[srf_fuels][herb][cbh]}	{d[srf_fuels][herb][cover]}	{d[srf_fuels][herb][width]}	{d[srf_fuels][herb][spat_group]}
+Leave_Live	{d[srf_fuels][herb][live][load]}	{d[srf_fuels][herb][live][mvr]}	{d[srf_fuels][herb][live][svr]}	{d[srf_fuels][herb][live][moisture]}
+Leave_Dead	{d[srf_fuels][herb][dead][load]}	{d[srf_fuels][herb][dead][mvr]}	{d[srf_fuels][herb][dead][svr]}	{d[srf_fuels][herb][dead][moisture]}
+
+5	Shrub	{d[srf_fuels][shrub][ht]}	{d[srf_fuels][shrub][cbh]}	{d[srf_fuels][shrub][cover]}	{d[srf_fuels][shrub][width]}	{d[srf_fuels][shrub][spat_group]}
+Leave_Live	{d[srf_fuels][shrub][live][load]}	{d[srf_fuels][shrub][live][mvr]}	{d[srf_fuels][shrub][live][svr]}	{d[srf_fuels][shrub][live][moisture]}
+Leave_Dead	{d[srf_fuels][shrub][dead][load]}	{d[srf_fuels][shrub][dead][mvr]}	{d[srf_fuels][shrub][dead][svr]}	{d[srf_fuels][shrub][dead][moisture]}
+6	Herb	{d[srf_fuels][herb][ht]}	{d[srf_fuels][herb][cbh]}	{d[srf_fuels][herb][cover]}	{d[srf_fuels][herb][width]}	{d[srf_fuels][herb][spat_group]}
+Leave_Live	{d[srf_fuels][herb][live][load]}	{d[srf_fuels][herb][live][mvr]}	{d[srf_fuels][herb][live][svr]}	{d[srf_fuels][herb][live][moisture]}
+Leave_Dead	{d[srf_fuels][herb][dead][load]}	{d[srf_fuels][herb][dead][mvr]}	{d[srf_fuels][herb][dead][svr]}	{d[srf_fuels][herb][dead][moisture]}
+
+7	Shrub	{d[srf_fuels][shrub][ht]}	{d[srf_fuels][shrub][cbh]}	{d[srf_fuels][shrub][cover]}	{d[srf_fuels][shrub][width]}	{d[srf_fuels][shrub][spat_group]}
+Leave_Live	{d[srf_fuels][shrub][live][load]}	{d[srf_fuels][shrub][live][mvr]}	{d[srf_fuels][shrub][live][svr]}	{d[srf_fuels][shrub][live][moisture]}
+Leave_Dead	{d[srf_fuels][shrub][dead][load]}	{d[srf_fuels][shrub][dead][mvr]}	{d[srf_fuels][shrub][dead][svr]}	{d[srf_fuels][shrub][dead][moisture]}
+8	Herb	{d[srf_fuels][herb][ht]}	{d[srf_fuels][herb][cbh]}	{d[srf_fuels][herb][cover]}	{d[srf_fuels][herb][width]}	{d[srf_fuels][herb][spat_group]}
+Leave_Live	{d[srf_fuels][herb][live][load]}	{d[srf_fuels][herb][live][mvr]}	{d[srf_fuels][herb][live][svr]}	{d[srf_fuels][herb][live][moisture]}
+Leave_Dead	{d[srf_fuels][herb][dead][load]}	{d[srf_fuels][herb][dead][mvr]}	{d[srf_fuels][herb][dead][svr]}	{d[srf_fuels][herb][dead][moisture]}
+
+9	Shrub	{d[srf_fuels][shrub][ht]}	{d[srf_fuels][shrub][cbh]}	{d[srf_fuels][shrub][cover]}	{d[srf_fuels][shrub][width]}	{d[srf_fuels][shrub][spat_group]}
+Leave_Live	{d[srf_fuels][shrub][live][load]}	{d[srf_fuels][shrub][live][mvr]}	{d[srf_fuels][shrub][live][svr]}	{d[srf_fuels][shrub][live][moisture]}
+Leave_Dead	{d[srf_fuels][shrub][dead][load]}	{d[srf_fuels][shrub][dead][mvr]}	{d[srf_fuels][shrub][dead][svr]}	{d[srf_fuels][shrub][dead][moisture]}
+10	Herb	{d[srf_fuels][herb][ht]}	{d[srf_fuels][herb][cbh]}	{d[srf_fuels][herb][cover]}	{d[srf_fuels][herb][width]}	{d[srf_fuels][herb][spat_group]}
+Leave_Live	{d[srf_fuels][herb][live][load]}	{d[srf_fuels][herb][live][mvr]}	{d[srf_fuels][herb][live][svr]}	{d[srf_fuels][herb][live][moisture]}
+Leave_Dead	{d[srf_fuels][herb][dead][load]}	{d[srf_fuels][herb][dead][mvr]}	{d[srf_fuels][herb][dead][svr]}	{d[srf_fuels][herb][dead][moisture]}
+
+11	Litter	{d[srf_fuels][litter][ht]}	{d[srf_fuels][litter][cbh]}	{d[srf_fuels][litter][cover]}	{d[srf_fuels][litter][width]}	{d[srf_fuels][litter][spat_group]}
+Litter	{d[srf_fuels][litter][load]}	{d[srf_fuels][litter][mvr]}	{d[srf_fuels][litter][svr]}	{d[srf_fuels][litter][moisture]}
+
+
+Default	Leave_Live	0.9	150
+Default	Twig1_Live	0.9	100
+Default	Twig2_Live	0.9	80
+Default	Twig3_Live	0.9	70
+Default	Leave_Dead	0.1	10
+Default	Twig1_Dead	0.1	10
+Default	Twig2_Dead	0.1	10
+Default	Twig3_Dead	0.1	10
+PSME	Leave_Live	0.9	150
+PSME	Twig1_Live	0.9	100
+PSME	Twig2_Live	0.9	80
+PSME	Twig3_Live	0.9	70
+PSME	Leave_Dead	0.1	10
+PSME	Twig1_Dead	0.1	10
+PSME	Twig2_Dead	0.1	10
+PSME	Twig3_Dead	0.1	10

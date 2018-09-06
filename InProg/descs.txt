@@ -1,0 +1,8 @@
+Elevation : Meters
+Slope : Degrees
+Aspect : Azimuth Degrees
+Model : Index
+Canopy Cover : Percent
+Canopy Height : Meters/10
+Canopy Base Height : Meters/10
+Canopy Bulk Density : KiloGram per Cubic Meter/100

@@ -1,0 +1,130 @@
+Compiled from "GLBase.java"
+public interface javax.media.opengl.GLBase {
+  public abstract boolean isGL();
+
+  public abstract boolean isGL4bc();
+
+  public abstract boolean isGL4();
+
+  public abstract boolean isGL3bc();
+
+  public abstract boolean isGL3();
+
+  public abstract boolean isGL2();
+
+  public abstract boolean isGLES1();
+
+  public abstract boolean isGLES2();
+
+  public abstract boolean isGLES3();
+
+  public abstract boolean isGLES();
+
+  public abstract boolean isGL2ES1();
+
+  public abstract boolean isGL2ES2();
+
+  public abstract boolean isGL2ES3();
+
+  public abstract boolean isGL3ES3();
+
+  public abstract boolean isGL4ES3();
+
+  public abstract boolean isGL2GL3();
+
+  public abstract boolean isGL4core();
+
+  public abstract boolean isGL3core();
+
+  public abstract boolean isGLcore();
+
+  public abstract boolean isGLES2Compatible();
+
+  public abstract boolean isGLES3Compatible();
+
+  public abstract boolean hasGLSL();
+
+  public abstract javax.media.opengl.GL getDownstreamGL() throws javax.media.opengl.GLException;
+
+  public abstract javax.media.opengl.GL getRootGL() throws javax.media.opengl.GLException;
+
+  public abstract javax.media.opengl.GL getGL() throws javax.media.opengl.GLException;
+
+  public abstract javax.media.opengl.GL4bc getGL4bc() throws javax.media.opengl.GLException;
+
+  public abstract javax.media.opengl.GL4 getGL4() throws javax.media.opengl.GLException;
+
+  public abstract javax.media.opengl.GL3bc getGL3bc() throws javax.media.opengl.GLException;
+
+  public abstract javax.media.opengl.GL3 getGL3() throws javax.media.opengl.GLException;
+
+  public abstract javax.media.opengl.GL2 getGL2() throws javax.media.opengl.GLException;
+
+  public abstract javax.media.opengl.GLES1 getGLES1() throws javax.media.opengl.GLException;
+
+  public abstract javax.media.opengl.GLES2 getGLES2() throws javax.media.opengl.GLException;
+
+  public abstract javax.media.opengl.GLES3 getGLES3() throws javax.media.opengl.GLException;
+
+  public abstract javax.media.opengl.GL2ES1 getGL2ES1() throws javax.media.opengl.GLException;
+
+  public abstract javax.media.opengl.GL2ES2 getGL2ES2() throws javax.media.opengl.GLException;
+
+  public abstract javax.media.opengl.GL2ES3 getGL2ES3() throws javax.media.opengl.GLException;
+
+  public abstract javax.media.opengl.GL3ES3 getGL3ES3() throws javax.media.opengl.GLException;
+
+  public abstract javax.media.opengl.GL4ES3 getGL4ES3() throws javax.media.opengl.GLException;
+
+  public abstract javax.media.opengl.GL2GL3 getGL2GL3() throws javax.media.opengl.GLException;
+
+  public abstract javax.media.opengl.GLProfile getGLProfile();
+
+  public abstract javax.media.opengl.GLContext getContext();
+
+  public abstract boolean isFunctionAvailable(java.lang.String);
+
+  public abstract boolean isExtensionAvailable(java.lang.String);
+
+  public abstract boolean hasBasicFBOSupport();
+
+  public abstract boolean hasFullFBOSupport();
+
+  public abstract int getMaxRenderbufferSamples();
+
+  public abstract boolean isNPOTTextureAvailable();
+
+  public abstract boolean isTextureFormatBGRA8888Available();
+
+  public abstract void setSwapInterval(int);
+
+  public abstract int getSwapInterval();
+
+  public abstract java.lang.Object getPlatformGLExtensions();
+
+  public abstract java.lang.Object getExtension(java.lang.String);
+
+  public abstract void glClearDepth(double);
+
+  public abstract void glDepthRange(double, double);
+
+  public abstract int getBoundBuffer(int);
+
+  public abstract javax.media.opengl.GLBufferStorage getBufferStorage(int);
+
+  public abstract javax.media.opengl.GLBufferStorage mapBuffer(int, int) throws javax.media.opengl.GLException;
+
+  public abstract javax.media.opengl.GLBufferStorage mapBufferRange(int, long, long, int) throws javax.media.opengl.GLException;
+
+  public abstract boolean isVBOArrayBound();
+
+  public abstract boolean isVBOElementArrayBound();
+
+  public abstract int getBoundFramebuffer(int);
+
+  public abstract int getDefaultDrawFramebuffer();
+
+  public abstract int getDefaultReadFramebuffer();
+
+  public abstract int getDefaultReadBuffer();
+}

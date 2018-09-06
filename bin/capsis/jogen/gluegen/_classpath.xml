@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" output="build/test/build/classes" path="src/junit">
+		<attributes>
+			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="gluegen/build/obj"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="src" output="build/classes" path="build/gensrc/java">
+		<attributes>
+			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="gluegen/build/obj"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="src" output="build/test/build/classes" path="build/test/build/gensrc/classes">
+		<attributes>
+			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="gluegen/build/test/build/natives"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry excluding="com/jogamp/gluegen/runtime/BufferFactoryInternal.java" kind="src" output="build/classes" path="src/java">
+		<attributes>
+			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="gluegen/build/obj"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="src" path="test/junit"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/Ant"/>
+	<classpathentry kind="lib" path="make/lib/antlr.jar"/>
+	<classpathentry kind="lib" path="make/lib/android-sdk/15/android.jar" sourcepath="make/lib/android-sdk/15/android-java-src.zip"/>
+	<classpathentry kind="lib" path="make/lib/junit.jar" sourcepath="make/lib/junit-sources.jar"/>
+	<classpathentry kind="lib" path="make/lib/semantic-versioning/semver.jar" sourcepath="make/lib/semantic-versioning/semver-src.zip"/>
+	<classpathentry kind="output" path="build/eclipse-classes"/>
+</classpath>

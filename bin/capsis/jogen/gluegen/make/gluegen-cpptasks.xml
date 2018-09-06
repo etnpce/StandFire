@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+   - Ant project file for setting up cpptasks (indirection).
+   - You may overwrite the following compiler configuration
+   - with your custom one, see 'gluegen-cpptasks-custom.xml'.
+   -
+   - To use your custom cpptasks file,
+   - define the property 'gluegen-cpptasks.file'.
+   - 
+   - This Ant project file depends on properties being set
+   - via gluegen.properties, see: gluegen-properties.xml and gluegen.properties !
+  -->
+<project name="GlueGen-cpptasks" basedir=".">
+
+  <property name="gluegen.root"          value=".."                 /> <!-- default value -->
+  <property name="gluegen.root.abs-path" location="${gluegen.root}" />
+
+  <!-- import properties -->
+  <import file="gluegen-properties.xml" />
+
+  <!-- import cpptasks -->
+  <!--typedef resource="net/sf/antcontrib/cpptasks/antlib.xml" classpath="${gluegen.root}/make/lib/cpptasks.jar;${gluegen.root}/make/lib/CppTasksGCCNamespaceHack.jar"/-->
+  <typedef resource="net/sf/antcontrib/cpptasks/antlib.xml" classpath="${gluegen.root}/make/lib/cpptasks.jar"/>
+
+  <!-- 0 fetch environment variable GLUEGEN_CPPTASKS_FILE -> gluegen-cpptasks.file -->
+  <property environment="env" />
+  <condition property="gluegen-cpptasks.file" value="${env.GLUEGEN_CPPTASKS_FILE}">
+    <not>
+     <equals arg1="${env.GLUEGEN_CPPTASKS_FILE}" arg2="$${env.GLUEGEN_CPPTASKS_FILE}" casesensitive="true" />
+    </not>
+  </condition>
+  <!-- 1st check for relative location to gluegen.root -->
+  <condition property="gluegen-cpptasks.file.rel"
+             value="${gluegen.root}/${gluegen-cpptasks.file}">
+             <available file="${gluegen.root}/${gluegen-cpptasks.file}"/>
+  </condition>
+  <!-- 2nd check for absolute location -->
+  <condition property="gluegen-cpptasks.file.rel"
+             value="${gluegen-cpptasks.file}">
+             <available file="${gluegen-cpptasks.file}"/>
+  </condition>
+  <!-- 3rd use default value if the above is not successful -->
+  <property name="gluegen-cpptasks.file.rel"      value="${gluegen.root}/make/gluegen-cpptasks-base.xml" />
+
+  <property name="gluegen-cpptasks.file.abs-path" location="${gluegen-cpptasks.file.rel}" />
+
+  <!--echo message="gluegen-cpptasks.file.abs-path: ${gluegen-cpptasks.file.abs-path}" /-->
+  <import file="${gluegen-cpptasks.file.abs-path}" optional="false" />
+
+</project>
