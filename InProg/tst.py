@@ -40,8 +40,8 @@ _Stand_Template = Template("\n"
 
 _Vent_Template = Template("&VENT XB=$lx,$ux,$ly,$uy,$z,$z, SURF_ID='IGN FIRE' /\n")
 
-_OBST_Template = Template("&OBST XB=$lx,$ux,$ly,$uy,0,$z, SURF_ID='' /\n"
-                          "&OBST XB=$lx,$ux,$ly,$uy,$z,$z, SURF_ID='${stand_id}' /\n")
+_OBST_Template = Template("&OBST XB=$lx,$ux,$ly,$uy,0,$z,SURF_ID=''/\n"
+                          "&OBST XB=$lx,$ux,$ly,$uy,$z,$z,SURF_ID='${stand_id}'/\n")
 
 
 def prime_facts(n):
@@ -86,7 +86,7 @@ def _split_meshes(meshes, factor):
                 yield MultiMesh(pos_y + sub_size * sub_reps, pos_x, sub_size + 1, size_x, rep_y * excess, rep_x)
 
 
-def _interpolate_elevations(raster, raster_size_y, raster_size_x, ratio):
+"""def _interpolate_elevations(raster, raster_size_y, raster_size_x, ratio):
     # type: (np.ndarray, int, int, int) -> np.ndarray
     elevations = np.empty([raster_size_y * ratio, raster_size_x * ratio], dtype=np.int16, order='C')
     for y in xrange(raster_size_y):
@@ -96,17 +96,19 @@ def _interpolate_elevations(raster, raster_size_y, raster_size_x, ratio):
                 for dx in xrange(ratio):
                     elevations[y * ratio + dy, x * ratio + dx] = elevation  # todo interpolate
     return elevations
+"""
 
 
-def _output_meshes(outfile, meshes, mesh_res, elevations, mesh_overhead):
-    # type: (BinaryIO, Iterable[MultiMesh], int, np.ndarray, int) -> ()
+def _output_meshes(outfile, meshes, mesh_res, ratio, elevations, mesh_overhead):
+    # type: (BinaryIO, Iterable[MultiMesh], int, int, np.ndarray, int) -> ()
     mesh_overhead = mesh_overhead + mesh_res - 1  # combine mesh_overhead with integer round up constant
     # Tuple Destructuring
     for (mesh_pos_y, mesh_pos_x, size_y, size_x, rep_y, rep_x) in meshes:
         # print(mesh_pos_y, mesh_pos_x, size_y, size_x, rep_y, rep_x)
         for pos_y in xrange(mesh_pos_y, mesh_pos_y + size_y * rep_y, size_y):
             for pos_x in xrange(mesh_pos_x, mesh_pos_x + size_x * rep_x, size_x):
-                sub_elevation = elevations[pos_y:pos_y + size_y, pos_x:pos_x + size_x]
+                sub_elevation = elevations[pos_y // ratio: (pos_y + size_y + ratio - 1) // ratio,
+                                           pos_x // ratio: (pos_x + size_x + ratio - 1) // ratio]
                 # round min_z down and max_z up to be aligned to global mesh
                 min_z = sub_elevation.min() // mesh_res - 1
                 max_z = (sub_elevation.max() + mesh_overhead) // mesh_res
@@ -123,7 +125,7 @@ def _stand_id_from(stand_cache, raster_cell):
 
 
 # mesh_res must divide {RASTER_RES} evenly
-def gen(lower_vent_x, lower_vent_y, upper_vent_x, upper_vent_y, ignition_time, in_file="dat/us_140lcp40.lcp",
+def gen(lower_vent_x, lower_vent_y, upper_vent_x, upper_vent_y, ignition_time, in_file="dat/lcp/us_140lcp40.lcp",
         out_file="./out/test.txt", run_title="TestLevelSet",
         mesh_res=10, n_meshes=1, time_span=300):
     with no_gc():  # I believe this helps reduce overhead of these massive allocations
@@ -133,14 +135,15 @@ def gen(lower_vent_x, lower_vent_y, upper_vent_x, upper_vent_y, ignition_time, i
         raster_size_y = data.RasterYSize  # type: int
         raster_size_x = data.RasterXSize  # type: int
         raster = data.GetVirtualMemArray(band_sequential=False)  # type: np.ndarray
+        elevations = raster[:, :, 0]  # Not sure if this is slower than getting it separately
         ratio = RASTER_RES // mesh_res  # Mesh cells per Raster cell
         assert mesh_res * ratio == RASTER_RES  # Check that mesh_res is a factor of RASTER_RES
         # Y/XBound are in mesh cells (not units or raster cells)
         bound_y = raster_size_y * ratio
         bound_x = raster_size_x * ratio
-        elevations = _interpolate_elevations(raster, raster_size_y, raster_size_x, ratio)
+        # elevations = _interpolate_elevations(raster, raster_size_y, raster_size_x, ratio)
         meshes = (MultiMesh(0, 0, bound_y, bound_x, 1, 1),)  # Single element iterable/stream
-        for factor in reversed(prime_facts(n_meshes)):
+        for factor in reversed(prime_facts(n_meshes)):  # Perform large splits first
             meshes = _split_meshes(meshes, factor)
         stands_cache = {}  # type: Dict[Tuple[np.int16, np.int16, np.int16, np.int16], StandEntry]
         prv_stand_id = 1
@@ -151,7 +154,7 @@ def gen(lower_vent_x, lower_vent_y, upper_vent_x, upper_vent_y, ignition_time, i
                 if k not in stands_cache:
                     model = models[int(model_id)]
                     prv_stand_id += 1
-                    stand_id = 'FUELMODE_{}_{}'.format(model.model_id, prv_stand_id)
+                    stand_id = '{}_{}'.format(model.model_id, prv_stand_id)  # prefix removed for smaller file
                     stands_cache[k] = StandEntry(stand_id,
                                                  _Stand_Template.substitute(
                                                      stand_id=stand_id,
@@ -175,9 +178,8 @@ def gen(lower_vent_x, lower_vent_y, upper_vent_x, upper_vent_y, ignition_time, i
 
             output.write("&HEAD CHID='{0}', TITLE='{0}' /\n\n".format(run_title))
             sep('Meshes')
-            _output_meshes(output, meshes, mesh_res, elevations, mesh_overhead)
+            _output_meshes(output, meshes, mesh_res, ratio, elevations, mesh_overhead)
 
-            # Note: Intentional empty line at beginning of this block string
             sep('Header')
             output.write(("&time T_END={} /\n"
                           "\n"
@@ -204,17 +206,17 @@ def gen(lower_vent_x, lower_vent_y, upper_vent_x, upper_vent_y, ignition_time, i
 
             sep('Vents')
             output.writelines(_Vent_Template.substitute(
-                lx=x * mesh_res, ux=(x + 1) * mesh_res, ly=y * mesh_res, uy=(y + 1) * mesh_res, z=elevations[y, x])
-                              for x in xrange(lower_vent_x // mesh_res, (upper_vent_x + mesh_res) // mesh_res)
-                              for y in xrange(lower_vent_y // mesh_res, (upper_vent_y + mesh_res) // mesh_res))
+                lx=x * RASTER_RES, ux=(x + 1) * RASTER_RES, ly=y * RASTER_RES, uy=(y + 1) * RASTER_RES, z=elevations[y, x])
+                              for x in xrange(lower_vent_x // RASTER_RES, (upper_vent_x + RASTER_RES - 1) // RASTER_RES)
+                              for y in xrange(lower_vent_y // RASTER_RES, (upper_vent_y + RASTER_RES - 1) // RASTER_RES))
 
             sep('Ground and Stands')  # Need to simplify output greatly
             # need to know whether wfds levelset cares about stand z
             # The next line means a refactor will be required if wfds levelset dislikes obstacles going out of the mesh
-            output.writelines(_OBST_Template.substitute(
-                lx=x * mesh_res, ux=(x + 1) * mesh_res, ly=y * mesh_res, uy=(y + 1) * mesh_res, z=elevations[y, x],
-                stand_id=_stand_id_from(stands_cache, raster[y // ratio, x // ratio]))
-                              for x in xrange(0, bound_x) for y in xrange(0, bound_y))
+            output.writelines(_OBST_Template.substitute(lx=x * RASTER_RES, ux=(x + 1) * RASTER_RES,
+                                                        ly=y * RASTER_RES, uy=(y + 1) * RASTER_RES, z=elevations[y, x],
+                                                        stand_id=_stand_id_from(stands_cache, raster[y, x]))
+                              for x in xrange(0, raster_size_x) for y in xrange(0, raster_size_y))
 
             sep('Footer')
             output.write("&SURF ID='wind',RAMP_V='wind', PROFILE='ATMOSPHERIC', Z0=10., PLE=0.143, VEL=-4 /\n"

@@ -54,7 +54,6 @@ def _make(model_id, loadD1hr, loadD10hr, loadD100hr, loadHerb, loadWood, dynamic
                      (loadD1hr + loadHerb + loadWood) * KG_PER_TON / SQ_MT_PER_ACRE,
                      avg_SAV / MT_PER_FT,
                      packing_ratio)
-# TODO _make unit conversions
 
 
 models = {

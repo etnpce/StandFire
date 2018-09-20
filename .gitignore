@@ -112,3 +112,5 @@ dmypy.json
 
 # Huge test file
 *.lcp
+out/test.txt
+test_dir/
