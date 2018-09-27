@@ -2,9 +2,10 @@ import numpy as np
 import gdal as G
 from collections import namedtuple
 from string import Template
-from FuelModels import models
+from FuelModels import models, MODEL_10_ROS, MT_PER_FT
 from without_gc import no_gc
 from enum import Enum
+from math import sqrt
 
 from typing import Iterable, Generator, Dict, BinaryIO, Tuple
 
@@ -20,58 +21,67 @@ class CrownMode(Enum):
 
 
 _Stand_Template = Template("\n"
-                           "&SURF ID ='${stand_id}'\n"
+                           "&SURF ID='${stand_id}'\n"
                            "FREE_SLIP=.TRUE.\n"
-                           "VEG_LEVEL_SET_SPREAD = .${spread}.\n"
+                           "VEG_LEVEL_SET_SPREAD=.${spread}.\n"
                            "VEG_LSET_ELLIPSE=.TRUE.\n"
-                           "VEG_LSET_SURFACE_FIRE_HEAD_ROS_MODEL= 'ROTHERMEL' \n"
-                           "VEG_LSET_ROTH_ZEROWINDSLOPE_ROS =  ${ros}\n"
+                           "VEG_LSET_SURFACE_FIRE_HEAD_ROS_MODEL='ROTHERMEL' \n"
+                           "VEG_LSET_ROTH_ZEROWINDSLOPE_ROS=${ros}\n"
                            "VEG_LSET_HEAT_OF_COMBUSTION=${heat}\n"
-                           "VEG_LSET_BETA = ${packing_ratio}\n"
-                           "VEG_LSET_SIGMA = ${sav}\n"
-                           "VEG_LSET_SURF_HEIGHT =  ${depth}\n"
-                           "VEG_LSET_SURF_LOAD   =  ${load}\n"
-                           "VEG_LSET_CHAR_FRACTION = 0.2\n"  # Should I try to make this dynamic?
+                           "VEG_LSET_BETA=${packing_ratio}\n"
+                           "VEG_LSET_SIGMA=${sav}\n"
+                           "VEG_LSET_SURF_HEIGHT=${depth}\n"
+                           "VEG_LSET_SURF_LOAD=${load}\n"
+                           "VEG_LSET_CHAR_FRACTION=0.2\n"  # Should I try to make this dynamic?
                            "${crown}"
-                           "RGB=122,117,48 /\n")
+                           "RGB=122,117,48/\n")
 
-_CRUZ_Template = Template("VEG_LSET_CROWN_FIRE_HEAD_ROS_MODEL= 'CRUZ' \n"
-                          "VEG_LSET_SURF_EFFM = ${effm}\n"
-                          "VEG_LSET_FUEL_STRATA_GAP = ${canopy_base_gap}\n"
-                          "VEG_LSET_CROWNFIRE_ANGLE = 90\n"
+_CRUZ_Template = Template("VEG_LSET_CROWN_FIRE_HEAD_ROS_MODEL= 'CRUZ'\n"
+                          "VEG_LSET_SURF_EFFM=${effm}\n"  # FINE FUEL MOISTURE
+                          "VEG_LSET_FUEL_STRATA_GAP=${canopy_base_gap}\n"
+                          "VEG_LSET_CROWNFIRE_ANGLE=90\n"
                           "VEG_LSET_CRUZ_PROB_CROWN=0.5\n")
 
-_SR_Template = Template("VEG_LSET_CROWN_FIRE_HEAD_ROS_MODEL= 'RS' \n"
+_SR_Template = Template("VEG_LSET_CROWN_FIRE_HEAD_ROS_MODEL='RS'\n"
                         "VEG_LSET_CANOPY_FMC=1\n"
                         "VEG_LSET_CANOPY_BASE_HEIGHT=${canopy_base_height}\n"
                         "VEG_LSET_ROTHFM10_ZEROWINDSLOPE_ROS=${other_ros}\n")
 
-_COMMON_CROWN_Template = Template("VEG_LSET_WAF_SHELTERED =  ${waf}\n"
-                                  "VEG_LSET_CANOPY_BULK_DENSITY= ${canopy_density}\n"
-                                  "VEG_LSET_CANOPY_HEIGHT= ${canopy_height}\n")
+_COMMON_CROWN_Template = Template("VEG_LSET_WAF_${un}SHELTERED=${waf}\n"
+                                  "VEG_LSET_CANOPY_BULK_DENSITY=${canopy_density}\n"
+                                  "VEG_LSET_CANOPY_HEIGHT=${canopy_height}\n")
 
 
 def _output_surf(outfile, stand, crown_mode, level_mode):
-    # type: (BinaryIO, Tuple[Tuple[np.int16, np.int16, np.int16, np.int16], str], CrownMode, int) -> ()
-    model_id, canopy_height, canopy_base_height, canopy_density = stand[0]
+    # type: (BinaryIO, Tuple[Tuple[np.int16, np.int16, np.int16, np.int16, np.int16], str], CrownMode, int) -> ()
+    model_id, canopy_cover, canopy_height, canopy_base_height, canopy_density = stand[0]
     model = models[int(model_id)]
     crown_str = ""
-    if crown_mode is CrownMode.CRUZ:
-        crown_str = _CRUZ_Template.substitute(effm=None, canopy_base_gap=canopy_base_height - model.depth)
-    elif crown_mode is CrownMode.RS:
-        crown_str = _SR_Template.substitute(other_ros=None, canopy_base_height=canopy_base_height)
-    if crown_mode in CrownMode:
-        crown_str += _COMMON_CROWN_Template.substitute(waf=None,  # TODO ????
-                                                       canopy_density=canopy_density, canopy_height=canopy_height)
+    if canopy_height > 0:
+        if crown_mode is CrownMode.CRUZ:
+            crown_str = _CRUZ_Template.substitute(effm=model.fine_fuel_moisture,
+                                                  canopy_base_gap=canopy_base_height - model.depth)
+        elif crown_mode is CrownMode.RS:
+            crown_str = _SR_Template.substitute(other_ros=MODEL_10_ROS, canopy_base_height=canopy_base_height)
+        if crown_mode in CrownMode:
+            waf = model.waf
+            crown_ratio = canopy_base_height / canopy_height
+            f = canopy_cover / 3 * crown_ratio
+            un = "UN"
+            if f >= .05:
+                un = ""
+                waf = waf * .555/1.83 / sqrt(f * model.depth / MT_PER_FT)  # Behave docs
+            crown_str += _COMMON_CROWN_Template.substitute(un=un, waf=waf, canopy_density=canopy_density,
+                                                           canopy_height=canopy_height)
     if level_mode == 4:
         crown_str += ("PART_ID='TE'\n"
-                      "NPPC = 1\n"
-                      "VEL = -0.01 \n")
+                      "NPPC=1\n"
+                      "VEL=-0.01 \n")
 
     outfile.write(_Stand_Template.substitute(
         stand_id=stand[1],
         spread=str(model.model_id[0:2] != 'NB').upper(),
-        ros=None,  # TODO
+        ros=model.ros,
         heat=model.heat_content,
         packing_ratio=model.packing_ratio,
         sav=model.avg_surface_volume_ratio,
@@ -81,7 +91,7 @@ def _output_surf(outfile, stand, crown_mode, level_mode):
     ))
 
 
-_Vent_Template = Template("&VENT XB=$lx,$ux,$ly,$uy,$z,$z, SURF_ID='IGN FIRE' /\n")
+_Vent_Template = Template("&VENT XB=$lx,$ux,$ly,$uy,$z,$z,SURF_ID='IGN FIRE'/\n")
 
 _OBST_Template = Template("&OBST XB=$lx,$ux,$ly,$uy,0,$z,SURF_ID='${stand_id}'/\n")
 
@@ -127,19 +137,6 @@ def _split_meshes(meshes, factor):
                 yield MultiMesh(pos_y + sub_size * sub_reps, pos_x, sub_size + 1, size_x, rep_y * excess, rep_x)
 
 
-"""def _interpolate_elevations(raster, raster_size_y, raster_size_x, ratio):
-    # type: (np.ndarray, int, int, int) -> np.ndarray
-    elevations = np.empty([raster_size_y * ratio, raster_size_x * ratio], dtype=np.int16, order='C')
-    for y in xrange(raster_size_y):
-        for x in xrange(raster_size_x):
-            elevation, slope, aspect = raster[y, x, :3]
-            for dy in xrange(ratio):
-                for dx in xrange(ratio):
-                    elevations[y * ratio + dy, x * ratio + dx] = elevation  # todo interpolate
-    return elevations
-"""
-
-
 def _output_meshes(outfile, meshes, mesh_res, ratio, elevations, mesh_overhead):
     # type: (BinaryIO, Iterable[MultiMesh], int, int, np.ndarray, int) -> ()
     mesh_overhead = mesh_overhead + mesh_res - 1  # combine mesh_overhead with integer round up constant
@@ -160,14 +157,9 @@ def _output_meshes(outfile, meshes, mesh_res, ratio, elevations, mesh_overhead):
                               min_z * mesh_res, max_z * mesh_res))  # Z coordinates
 
 
-def _extract_stand_key(raster_cell):
-    model_id, _, canopy_height, canopy_base_height, canopy_density = raster_cell[3:]
-    return model_id, canopy_height, canopy_base_height, canopy_density
-
-
 # mesh_res must divide {RASTER_RES} evenly
 def gen(levelset_mode, lower_vent_x, lower_vent_y, upper_vent_x, upper_vent_y, ignition_time,
-        lcp_file="dat/lcp/us_140lcp40.lcp", out_file="./out/test.txt", run_title="TestLevelSet",
+        lcp_file="dat/lcp/us_140lcp40_Landscape_1.lcp", out_file="./out/test.txt", run_title="TestLevelSet",
         mesh_res=10, n_meshes=1, time_span=300):
     with no_gc():  # I believe this helps reduce overhead of these massive allocations
         data = G.Open(lcp_file, G.GA_ReadOnly)  # Must not be Garbage Collected before raster
@@ -177,6 +169,7 @@ def gen(levelset_mode, lower_vent_x, lower_vent_y, upper_vent_x, upper_vent_y, i
         raster_size_x = data.RasterXSize  # type: int
         raster = data.GetVirtualMemArray(band_sequential=False)  # type: np.ndarray
         elevations = raster[:, :, 0]  # Not sure if this is slower than getting it separately
+        raster = raster[:, :, 3:]  # Convenience, might gain speed
         ratio = RASTER_RES // mesh_res  # Mesh cells per Raster cell
         assert mesh_res * ratio == RASTER_RES  # Check that mesh_res is a factor of RASTER_RES
         # Y/XBound are in mesh cells (not units or raster cells)
@@ -186,11 +179,11 @@ def gen(levelset_mode, lower_vent_x, lower_vent_y, upper_vent_x, upper_vent_y, i
         meshes = (MultiMesh(0, 0, bound_y, bound_x, 1, 1),)  # Single element iterable/stream
         for factor in reversed(prime_facts(n_meshes)):  # Perform large splits first
             meshes = _split_meshes(meshes, factor)
-        stand_map = {}  # type: Dict[Tuple[np.int16, np.int16, np.int16, np.int16], str]
+        stand_map = {}  # type: Dict[Tuple[np.int16, np.int16, np.int16, np.int16, np.int16], str]
         stand_id = 1
         for y in raster:
             for x in y:
-                k = _extract_stand_key(x)
+                k = tuple(x)
                 if k not in stand_map:
                     model = models[int(k[0])]
                     stand_map[k] = '{}_{}'.format(model.model_id, stand_id)
@@ -215,7 +208,7 @@ def gen(levelset_mode, lower_vent_x, lower_vent_y, upper_vent_x, upper_vent_y, i
                           "        VEG_LEVEL_SET_COUPLED=.{coupled}.\n"
                           "        VEG_LEVEL_SET_SURFACE_HEATFLUX=.FALSE.\n"
                           "        VEG_LEVEL_SET_THERMAL_ELEMENTS=.{thermal_elements}.\n"
-                          "        WIND_ONLY=.{wind_only}."
+                          "        WIND_ONLY=.{wind_only}.\n"
                           "{u0}"
                           "        PROJECTION=.TRUE.\n/"
                           # "        LAPSE_RATE=-0.0065 /\n"
@@ -225,7 +218,7 @@ def gen(levelset_mode, lower_vent_x, lower_vent_y, upper_vent_x, upper_vent_y, i
                                    not_coupled=str(levelset_mode < 3).upper(),
                                    coupled=str(levelset_mode >= 3).upper(),
                                    thermal_elements=str(levelset_mode == 4).upper(),
-                                   u0="" if levelset_mode != 1 else "        U0=" + str(11),  # TODO what is this?
+                                   u0="" if levelset_mode != 1 else "        U0=" + str(11)+'\n',  # TODO init wind vel
                                    wind_only=str(False).upper()))  # TODO how to input this?
 
             sep('Stand Definitions')
@@ -251,27 +244,26 @@ def gen(levelset_mode, lower_vent_x, lower_vent_y, upper_vent_x, upper_vent_y, i
                     for y in xrange(lower_vent_y // RASTER_RES, (upper_vent_y + RASTER_RES - 1) // RASTER_RES))
 
             sep('Ground and Stands')
-
+            # TODO Round Elevations?
             founds = np.empty([raster_size_y, raster_size_x], dtype=np.bool8, order='C')
             for y in xrange(0, raster_size_y):
                 for x in xrange(0, raster_size_x):
                     if not founds[y, x]:
-                        k = _extract_stand_key(raster[y, x])
+                        k = raster[y, x]
                         elevation = elevations[y, x]
                         max_max_x = x + 1
                         while max_max_x < raster_size_x and not founds[y, max_max_x] \
-                            and elevation == elevations[y, max_max_x] and k == _extract_stand_key(raster[y, max_max_x]):
+                            and elevation == elevations[y, max_max_x] and k == raster[y, max_max_x]:
                                 max_max_x += 1
                         max_max_y = y+1
                         max_size = max_max_x - x  # max_max_x is one too big, but subtracting x goes one too small
                         max_y = y + 1
                         prev_max_x = max_max_x
                         while max_y < raster_size_y and not founds[max_y, x] \
-                            and elevation == elevations[max_y, x] and k == _extract_stand_key(raster[max_y, x]):
+                            and elevation == elevations[max_y, x] and k == raster[max_y, x]:
                                 max_x = x + 1
                                 while max_x < prev_max_x and not founds[max_y, max_x] \
-                                    and elevation == elevations[max_y, max_x] \
-                                    and k == _extract_stand_key(raster[max_y, max_x]):
+                                    and elevation == elevations[max_y, max_x] and k == raster[max_y, max_x]:
                                         max_x += 1
                                 prev_max_x = max_x
                                 size = (max_x - x) * (max_y - y)
@@ -285,11 +277,11 @@ def gen(levelset_mode, lower_vent_x, lower_vent_y, upper_vent_x, upper_vent_y, i
                                 founds[y2, x2] = True
                         output.write(_OBST_Template.substitute(lx=x * RASTER_RES, ux=max_max_x * RASTER_RES,
                                                                ly=y * RASTER_RES, uy=max_max_y * RASTER_RES,
-                                                               z=elevation, stand_id=stand_map[k]))
+                                                               z=elevation, stand_id=stand_map[tuple(k)]))
             """
             output.writelines(_OBST_Template.substitute(lx=x * RASTER_RES, ux=(x + 1) * RASTER_RES,
                                                         ly=y * RASTER_RES, uy=(y + 1) * RASTER_RES, z=elevations[y, x],
-                                                        stand_id=stand_map[_extract_stand_key(raster[y, x])])
+                                                        stand_id=stand_map[raster[y, x]])
                               for x in xrange(0, raster_size_x) for y in xrange(0, raster_size_y)) """
 
             sep('Footer')

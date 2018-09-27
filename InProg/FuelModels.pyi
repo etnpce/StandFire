@@ -22,5 +22,11 @@ class FuelModel(NamedTuple):
     fuel_load : float
     avg_surface_volume_ratio : float
     packing_ratio : float
+    fine_fuel_moisture : float
+    waf : float
+    ros : float
 
 models : Dict[int, FuelModel]
+
+MODEL_10_ROS : float
+MT_PER_FT : float
