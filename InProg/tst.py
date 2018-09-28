@@ -6,6 +6,7 @@ from FuelModels import models, MODEL_10_ROS, MT_PER_FT
 from without_gc import no_gc
 from enum import Enum
 from math import sqrt
+from itertools import count, izip
 
 from typing import Iterable, Generator, Dict, BinaryIO, Tuple
 
@@ -179,15 +180,19 @@ def gen(levelset_mode, lower_vent_x, lower_vent_y, upper_vent_x, upper_vent_y, i
         meshes = (MultiMesh(0, 0, bound_y, bound_x, 1, 1),)  # Single element iterable/stream
         for factor in reversed(prime_facts(n_meshes)):  # Perform large splits first
             meshes = _split_meshes(meshes, factor)
-        stand_map = {}  # type: Dict[Tuple[np.int16, np.int16, np.int16, np.int16, np.int16], str]
-        stand_id = 1
-        for y in raster:
-            for x in y:
-                k = tuple(x)
-                if k not in stand_map:
-                    model = models[int(k[0])]
-                    stand_map[k] = '{}_{}'.format(model.model_id, stand_id)
-                    stand_id += 1
+
+        # Dict comprehensions don't skip repeated keys
+        stand_map = {k: models[int(k[0])].model_id + '_' + str(i)
+                     for (k, i) in izip({tuple(x) for y in raster for x in y}, count(1))}
+        # type: Dict[Tuple[np.int16, np.int16, np.int16, np.int16, np.int16], str]
+
+        # for y in raster:
+        #     for x in y:
+        #         k = tuple(x)
+        #         if k not in stand_map:
+        #             model = models[int(k[0])]
+        #             stand_map[k] = '{}_{}'.format(model.model_id, stand_id)
+        #             stand_id += 1
 
         with open(out_file, 'w') as output:
             def sep(section):
@@ -245,33 +250,41 @@ def gen(levelset_mode, lower_vent_x, lower_vent_y, upper_vent_x, upper_vent_y, i
 
             sep('Ground and Stands')
             # TODO Round Elevations?
+            half_mesh_res = mesh_res >> 1
             founds = np.empty([raster_size_y, raster_size_x], dtype=np.bool8, order='C')
             for y in xrange(0, raster_size_y):
                 for x in xrange(0, raster_size_x):
                     if not founds[y, x]:
                         k = raster[y, x]
-                        elevation = elevations[y, x]
+                        # round half-up to nearest mesh_res
+                        elevation = ((elevations[y, x] + half_mesh_res) // mesh_res) * mesh_res
+                        elevation_lower = elevation - half_mesh_res
+                        elevation_upper = elevation + half_mesh_res + (mesh_res & 1)  # Correction for odd rounding
                         max_max_x = x + 1
+                        assert elevation_lower <= elevation <= elevation_upper
                         while max_max_x < raster_size_x and not founds[y, max_max_x] \
-                            and elevation == elevations[y, max_max_x] and k == raster[y, max_max_x]:
-                                max_max_x += 1
+                                and elevation_lower <= elevations[y, max_max_x] <= elevation_upper \
+                                and np.array_equal(k, raster[y, max_max_x]):
+                            max_max_x += 1
                         max_max_y = y+1
                         max_size = max_max_x - x  # max_max_x is one too big, but subtracting x goes one too small
                         max_y = y + 1
                         prev_max_x = max_max_x
                         while max_y < raster_size_y and not founds[max_y, x] \
-                            and elevation == elevations[max_y, x] and k == raster[max_y, x]:
-                                max_x = x + 1
-                                while max_x < prev_max_x and not founds[max_y, max_x] \
-                                    and elevation == elevations[max_y, max_x] and k == raster[max_y, max_x]:
-                                        max_x += 1
-                                prev_max_x = max_x
-                                size = (max_x - x) * (max_y - y)
-                                if size > max_size:
-                                    max_size = size
-                                    max_max_x = max_x
-                                    max_max_y = max_y
-                                max_y += 1
+                                and elevation_lower <= elevations[max_y, x] <= elevation_upper \
+                                and np.array_equal(k, raster[max_y, x]):
+                            max_x = x + 1
+                            while max_x < prev_max_x and not founds[max_y, max_x] \
+                                    and elevation_lower <= elevations[max_y, max_x] <= elevation_upper \
+                                    and np.array_equal(k, raster[max_y, max_x]):
+                                max_x += 1
+                            prev_max_x = max_x
+                            size = (max_x - x) * (max_y - y)
+                            if size > max_size:
+                                max_size = size
+                                max_max_x = max_x
+                                max_max_y = max_y
+                            max_y += 1
                         for y2 in xrange(y, max_max_y):
                             for x2 in xrange(x, max_max_x):
                                 founds[y2, x2] = True
