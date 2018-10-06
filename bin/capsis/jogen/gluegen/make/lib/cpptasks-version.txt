@@ -1,0 +1,5 @@
+Current cpptasks is from 
+   <http://jogamp.org/git/?p=ant-cpptasks.git;a=summary>
+
+Original cpptasks is from
+   <http://ant-contrib.sourceforge.net/cpptasks/index.html>
