@@ -18,7 +18,7 @@ MESH_OVERHEAD = 10
 
 class CrownMode(Enum):
     CRUZ = "CRUZ"
-    RS = "RS"
+    SR = "SR"
 
 
 _Stand_Template = Template("\n"
@@ -35,15 +35,16 @@ _Stand_Template = Template("\n"
                            "VEG_LSET_SURF_LOAD=${load}\n"
                            "VEG_LSET_CHAR_FRACTION=0.2\n"  # Should I try to make this dynamic?
                            "${crown}"
-                           "RGB=122,117,48/\n")
+                           "RGB=122,117,48 /\n")
 
-_CRUZ_Template = Template("VEG_LSET_CROWN_FIRE_HEAD_ROS_MODEL= 'CRUZ'\n"
+_CRUZ_Template = Template("VEG_LSET_CROWN_FIRE_HEAD_ROS_MODEL='CRUZ'\n"
                           "VEG_LSET_SURF_EFFM=${effm}\n"  # FINE FUEL MOISTURE
                           "VEG_LSET_FUEL_STRATA_GAP=${canopy_base_gap}\n"
                           "VEG_LSET_CROWNFIRE_ANGLE=90\n"
                           "VEG_LSET_CRUZ_PROB_CROWN=0.5\n")
 
-_SR_Template = Template("VEG_LSET_CROWN_FIRE_HEAD_ROS_MODEL='RS'\n"
+_SR_Template = Template("VEG_LSET_CROWN_FIRE_HEAD_ROS_MODEL='SR'\n"
+                        "VEG_LSET_MODEL_FOR_PASSIVE_ROS = 'SR'\n" 
                         "VEG_LSET_CANOPY_FMC=1\n"
                         "VEG_LSET_CANOPY_BASE_HEIGHT=${canopy_base_height}\n"
                         "VEG_LSET_ROTHFM10_ZEROWINDSLOPE_ROS=${other_ros}\n")
@@ -62,7 +63,7 @@ def _output_surf(outfile, stand, crown_mode, level_mode):
         if crown_mode is CrownMode.CRUZ:
             crown_str = _CRUZ_Template.substitute(effm=model.fine_fuel_moisture,
                                                   canopy_base_gap=canopy_base_height - model.depth)
-        elif crown_mode is CrownMode.RS:
+        elif crown_mode is CrownMode.SR:
             crown_str = _SR_Template.substitute(other_ros=MODEL_10_ROS, canopy_base_height=canopy_base_height)
         if crown_mode in CrownMode:
             waf = model.waf
@@ -162,13 +163,30 @@ def _output_meshes(outfile, meshes, mesh_res, ratio, elevations, mesh_overhead):
 def gen(levelset_mode, lower_vent_x, lower_vent_y, upper_vent_x, upper_vent_y, ignition_time,
         lcp_file="dat/lcp/us_140lcp40_Landscape_1.lcp", out_file="./out/test.txt", run_title="TestLevelSet",
         mesh_res=10, n_meshes=1, time_span=300):
+    """
+    :param levelset_mode: 1-4
+    :param lower_vent_x: pos of left edge of ignition box
+    :param lower_vent_y: pos of top edge of ignition box
+    :param upper_vent_x: pos of right edge of ignition box
+    :param upper_vent_y: pos of bottom edge of ignition box
+    :param ignition_time: how long ignition box is lit
+    :param lcp_file: where the .lcp file to generate with is
+    :param out_file: where to dump the WFDS level set input file
+    :param run_title: The title of the WFDS run
+    :param mesh_res: resolution of the output mesh, must be a divisor of RASTER_RES = 30
+    :param n_meshes: how many cores you plan to run the result with
+    :param time_span: how long the WFDS input file simulates for
+    """
     with no_gc():  # I believe this helps reduce overhead of these massive allocations
         data = G.Open(lcp_file, G.GA_ReadOnly)  # Must not be Garbage Collected before raster
         # Canopy Height is in decimeters, round up to meters and then add fixed overhead
         mesh_overhead = (int(data.GetRasterBand(6).GetMetadataItem("CANOPY_HT_MAX")) + 9) // 10 + MESH_OVERHEAD
+        half_mesh_res = mesh_res >> 1
         raster_size_y = data.RasterYSize  # type: int
         raster_size_x = data.RasterXSize  # type: int
+        raster_size_y = raster_size_x = 250  # TODO kill
         raster = data.GetVirtualMemArray(band_sequential=False)  # type: np.ndarray
+        raster = raster[:raster_size_x, :raster_size_y, ::]  # TODO kill
         elevations = raster[:, :, 0]  # Not sure if this is slower than getting it separately
         raster = raster[:, :, 3:]  # Convenience, might gain speed
         ratio = RASTER_RES // mesh_res  # Mesh cells per Raster cell
@@ -186,14 +204,6 @@ def gen(levelset_mode, lower_vent_x, lower_vent_y, upper_vent_x, upper_vent_y, i
                      for (k, i) in izip({tuple(x) for y in raster for x in y}, count(1))}
         # type: Dict[Tuple[np.int16, np.int16, np.int16, np.int16, np.int16], str]
 
-        # for y in raster:
-        #     for x in y:
-        #         k = tuple(x)
-        #         if k not in stand_map:
-        #             model = models[int(k[0])]
-        #             stand_map[k] = '{}_{}'.format(model.model_id, stand_id)
-        #             stand_id += 1
-
         with open(out_file, 'w') as output:
             def sep(section):
                 print(section)
@@ -206,7 +216,7 @@ def gen(levelset_mode, lower_vent_x, lower_vent_y, upper_vent_x, upper_vent_y, i
             # TODO Figure out lvlset 2 wind thing
 
             sep('Header')
-            output.write(("&time T_END={time_span} /\n"
+            output.write(("&TIME T_END={time_span} /\n"
                           "\n"
                           "&MISC   TERRAIN_CASE=.FALSE.\n"
                           "        VEG_LEVEL_SET_UNCOUPLED=.{not_coupled}.\n"
@@ -215,7 +225,7 @@ def gen(levelset_mode, lower_vent_x, lower_vent_y, upper_vent_x, upper_vent_y, i
                           "        VEG_LEVEL_SET_THERMAL_ELEMENTS=.{thermal_elements}.\n"
                           "        WIND_ONLY=.{wind_only}.\n"
                           "{u0}"
-                          "        PROJECTION=.TRUE.\n/"
+                          "        PROJECTION=.TRUE. /\n"
                           # "        LAPSE_RATE=-0.0065 /\n"
                           "\n"
                           "&RADI RADIATION=.FALSE. /\n"
@@ -230,28 +240,30 @@ def gen(levelset_mode, lower_vent_x, lower_vent_y, upper_vent_x, upper_vent_y, i
             for stand in stand_map.items():
                 # For some reason the type checker fails here, thinking CrownMode == str != CrownMode
                 # noinspection PyTypeChecker
-                _output_surf(output, stand, CrownMode.RS, levelset_mode)
+                _output_surf(output, stand, CrownMode.SR, levelset_mode)
 
             output.write("\n"
                          "&PART ID='TE',\n"
-                         "AGE=50,\n"
-                         "TE_BURNTIME=2.5,\n"
-                         "MASSLESS=.TRUE.,\n"
-                         "SAMPLING_FACTOR=50,\n"
-                         "COLOR='BLACK' /\n\n"
+                         " AGE=50,\n"
+                         " TE_BURNTIME=2.5,\n"
+                         " MASSLESS=.TRUE.,\n"
+                         " SAMPLING_FACTOR=50,\n"
+                         " COLOR='BLACK' /\n"
+                         "\n"
                          "&SURF ID ='IGN FIRE',VEG_LSET_IGNITE_TIME={}, COLOR = 'RED' /\n".format(ignition_time))
 
             sep('Vents')
             output.writelines(_Vent_Template.substitute(
                 lx=x * RASTER_RES, ux=(x + 1) * RASTER_RES,
-                ly=y * RASTER_RES, uy=(y + 1) * RASTER_RES, z=elevations[y, x])
+                ly=y * RASTER_RES, uy=(y + 1) * RASTER_RES,
+                z=((elevations[y, x] + half_mesh_res) // mesh_res) * mesh_res)
                     for x in xrange(lower_vent_x // RASTER_RES, (upper_vent_x + RASTER_RES - 1) // RASTER_RES)
                     for y in xrange(lower_vent_y // RASTER_RES, (upper_vent_y + RASTER_RES - 1) // RASTER_RES))
 
             sep('Ground and Stands')
-            # TODO Round Elevations?
-            half_mesh_res = mesh_res >> 1
-            founds = np.empty([raster_size_y, raster_size_x], dtype=np.bool8, order='C')
+
+            founds = np.zeros([raster_size_y, raster_size_x], dtype=np.bool8, order='C')
+            # founds.fill(True)  # TODO REMOVE
             for y in xrange(0, raster_size_y):
                 for x in xrange(0, raster_size_x):
                     if not founds[y, x]:
@@ -279,33 +291,34 @@ def gen(levelset_mode, lower_vent_x, lower_vent_y, upper_vent_x, upper_vent_y, i
                                     and np.array_equal(k, raster[max_y, max_x]):
                                 max_x += 1
                             prev_max_x = max_x
+                            max_y += 1  # Moved here so that max_y is one past valid for saving of max_max_y
                             size = (max_x - x) * (max_y - y)
                             if size > max_size:
                                 max_size = size
                                 max_max_x = max_x
                                 max_max_y = max_y
-                            max_y += 1
+
                         for y2 in xrange(y, max_max_y):
                             for x2 in xrange(x, max_max_x):
                                 founds[y2, x2] = True
                         output.write(_OBST_Template.substitute(lx=x * RASTER_RES, ux=max_max_x * RASTER_RES,
                                                                ly=y * RASTER_RES, uy=max_max_y * RASTER_RES,
                                                                z=elevation, stand_id=stand_map[tuple(k)]))
-            """
-            output.writelines(_OBST_Template.substitute(lx=x * RASTER_RES, ux=(x + 1) * RASTER_RES,
+
+            """output.writelines(_OBST_Template.substitute(lx=x * RASTER_RES, ux=(x + 1) * RASTER_RES,
                                                         ly=y * RASTER_RES, uy=(y + 1) * RASTER_RES, z=elevations[y, x],
-                                                        stand_id=stand_map[raster[y, x]])
-                              for x in xrange(0, raster_size_x) for y in xrange(0, raster_size_y)) """
+                                                        stand_id=stand_map[tuple(raster[y, x])])
+                              for x in xrange(0, raster_size_x) for y in xrange(0, raster_size_y))"""
 
             sep('Footer')
-            output.write("&SURF ID='wind',RAMP_V='wind', PROFILE='ATMOSPHERIC', Z0=10., PLE=0.143, VEL=-4 /\n"
-                         "&RAMP ID='wind',F=1,T=0 /\n"
-                         "&RAMP ID='wind',F=1,T=1 /\n"
-                         "&VENT MB = XMIN, SURF_ID = 'wind' /\n"
-                         "&VENT MB = XMAX, SURF_ID = 'OPEN' /\n"
-                         "&VENT MB = YMIN, SURF_ID = 'MIRROR' /\n"
-                         "&VENT MB = YMAX, SURF_ID = 'MIRROR' /\n"
-                         "&VENT MB = ZMAX, SURF_ID = 'OPEN' /\n"
+            output.write("-&SURF ID='wind',RAMP_V='wind', PROFILE='ATMOSPHERIC', Z0=10., PLE=0.143, VEL=-4 /\n"
+                         "-&RAMP ID='wind',F=1,T=0 /\n"
+                         "-&RAMP ID='wind',F=1,T=1 /\n"
+                         "-&VENT MB = XMIN, SURF_ID = 'wind' /\n"
+                         "-&VENT MB = XMAX, SURF_ID = 'OPEN' /\n"
+                         "-&VENT MB = YMIN, SURF_ID = 'MIRROR' /\n"
+                         "-&VENT MB = YMAX, SURF_ID = 'MIRROR' /\n"
+                         "-&VENT MB = ZMAX, SURF_ID = 'OPEN' /\n"
                          "-- Outputs\n"
                          "&DUMP DT_SLCF=1,DT_BNDF=1,DT_ISOF=10,DT_PL3D=200,SMOKE3D=.FALSE. /\n"
                          "&SLCF PBY=150,QUANTITY='VELOCITY',VECTOR=.TRUE. /\n"
