@@ -1,7 +1,0 @@
-<dependencies>
-    <dependency>
-        <artifactId>gluegen-rt</artifactId>
-        <groupId>org.jogamp.gluegen</groupId>
-        <version>@VERSION@</version>
-    </dependency>
-</dependencies>

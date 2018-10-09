@@ -114,3 +114,4 @@ dmypy.json
 *.lcp
 out/test.txt
 test_dir/
+bin/

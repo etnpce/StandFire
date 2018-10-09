@@ -1,2 +1,0 @@
-#!/bin/bash
-java -Xbootclasspath/p:`dirname $0`/jackpotc.jar com.sun.tools.javac.Main -Xjcov "$@"

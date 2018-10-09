@@ -1,3 +1,0 @@
-Relative Data 2 - com/jogamp/common/net/data2/RelativeData2.txt
-
-This file exists for test purposes.

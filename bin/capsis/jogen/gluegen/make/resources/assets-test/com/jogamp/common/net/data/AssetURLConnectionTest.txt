@@ -1,3 +1,0 @@
-AssetURLConnectionTest Data Testing Relative Location
-
-This file exists for test purposes.
