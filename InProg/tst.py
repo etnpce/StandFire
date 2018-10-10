@@ -1,14 +1,15 @@
-import numpy as np
 import gdal as G
 from collections import namedtuple
+from enum import Enum
+from itertools import count, izip
+from math import sqrt
 from string import Template
+
+import numpy as np
+from typing import Iterable, Generator, Dict, BinaryIO, Tuple
+
 from FuelModels import models, MODEL_10_ROS, MT_PER_FT
 from without_gc import no_gc
-from enum import Enum
-from math import sqrt
-from itertools import count, izip
-
-from typing import Iterable, Generator, Dict, BinaryIO, Tuple
 
 #  Resolution of lcp input, fixed by LandFire
 RASTER_RES = 30
@@ -44,7 +45,7 @@ _CRUZ_Template = Template("VEG_LSET_CROWN_FIRE_HEAD_ROS_MODEL='CRUZ'\n"
                           "VEG_LSET_CRUZ_PROB_CROWN=0.5\n")
 
 _SR_Template = Template("VEG_LSET_CROWN_FIRE_HEAD_ROS_MODEL='SR'\n"
-                        "VEG_LSET_MODEL_FOR_PASSIVE_ROS = 'SR'\n" 
+                        "VEG_LSET_MODEL_FOR_PASSIVE_ROS = 'SR'\n"
                         "VEG_LSET_CANOPY_FMC=1\n"
                         "VEG_LSET_CANOPY_BASE_HEIGHT=${canopy_base_height}\n"
                         "VEG_LSET_ROTHFM10_ZEROWINDSLOPE_ROS=${other_ros}\n")
@@ -72,7 +73,7 @@ def _output_surf(outfile, stand, crown_mode, level_mode):
             un = "UN"
             if f >= .05:
                 un = ""
-                waf = waf * .555/1.83 / sqrt(f * model.depth / MT_PER_FT)  # Behave docs
+                waf = waf * .555 / 1.83 / sqrt(f * model.depth / MT_PER_FT)  # Behave docs
             crown_str += _COMMON_CROWN_Template.substitute(un=un, waf=waf, canopy_density=canopy_density,
                                                            canopy_height=canopy_height)
     if level_mode == 4:
@@ -263,7 +264,6 @@ def gen(levelset_mode, lower_vent_x, lower_vent_y, upper_vent_x, upper_vent_y, i
             sep('Ground and Stands')
 
             founds = np.zeros([raster_size_y, raster_size_x], dtype=np.bool8, order='C')
-            # founds.fill(True)  # TODO REMOVE
             for y in xrange(0, raster_size_y):
                 for x in xrange(0, raster_size_x):
                     if not founds[y, x]:
@@ -278,7 +278,7 @@ def gen(levelset_mode, lower_vent_x, lower_vent_y, upper_vent_x, upper_vent_y, i
                                 and elevation_lower <= elevations[y, max_max_x] <= elevation_upper \
                                 and np.array_equal(k, raster[y, max_max_x]):
                             max_max_x += 1
-                        max_max_y = y+1
+                        max_max_y = y + 1
                         max_size = max_max_x - x  # max_max_x is one too big, but subtracting x goes one too small
                         max_y = y + 1
                         prev_max_x = max_max_x
