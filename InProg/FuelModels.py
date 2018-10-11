@@ -60,7 +60,7 @@ def _make(model_id, loadD1hr, loadD10hr, loadD100hr, loadHerb, loadWood, dynamic
                      (loadD1hr * MODEL_MOISTURE_D1HR + loadHerb * MODEL_MOISTURE_HERB + loadWood * MODEL_MOISTURE_WOOD)
                      / (loadD1hr + loadHerb + loadWood) / 100,  # I assume fine moisture is just a weighted average
                      1.83 / log((20 + 0.36 * depth) / (0.13 * depth)),  # Behave docs
-                     ros)  # TODO Verify ros's and fine_moisture
+                     ros)  # TODO Verify fine_moisture
 
 
 NB_CLASS = FuelClass(0, -1, 0)

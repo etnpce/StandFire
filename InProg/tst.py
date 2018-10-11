@@ -151,7 +151,7 @@ def _output_meshes(outfile, meshes, mesh_res, ratio, elevations, mesh_overhead):
                 sub_elevation = elevations[pos_y // ratio: (pos_y + size_y + ratio - 1) // ratio,
                                            pos_x // ratio: (pos_x + size_x + ratio - 1) // ratio]
                 # round min_z down and max_z up to be aligned to global mesh
-                min_z = sub_elevation.min() // mesh_res - 1  # TODO See if this needs to always be 0
+                min_z = sub_elevation.min() // mesh_res - 1
                 max_z = (sub_elevation.max() + mesh_overhead) // mesh_res
                 outfile.write("&MESH IJK = {}, {}, {}, XB = {}, {}, {}, {}, {}, {} /\n".format(
                               size_x, size_y, max_z - min_z,  # Mesh dimensions
@@ -219,7 +219,7 @@ def gen(levelset_mode, lower_vent_x, lower_vent_y, upper_vent_x, upper_vent_y, i
             sep('Header')
             output.write(("&TIME T_END={time_span} /\n"
                           "\n"
-                          "&MISC   TERRAIN_CASE=.FALSE.\n"
+                          "&MISC   TERRAIN_CASE=.TRUE.\n"
                           "        VEG_LEVEL_SET_UNCOUPLED=.{not_coupled}.\n"
                           "        VEG_LEVEL_SET_COUPLED=.{coupled}.\n"
                           "        VEG_LEVEL_SET_SURFACE_HEATFLUX=.FALSE.\n"
@@ -234,7 +234,8 @@ def gen(levelset_mode, lower_vent_x, lower_vent_y, upper_vent_x, upper_vent_y, i
                                    not_coupled=str(levelset_mode < 3).upper(),
                                    coupled=str(levelset_mode >= 3).upper(),
                                    thermal_elements=str(levelset_mode == 4).upper(),
-                                   u0="" if levelset_mode != 1 else "        U0=" + str(11)+'\n',  # TODO init wind vel
+                                   # TODO what should initial wind velocity be?
+                                   u0="" if levelset_mode != 1 else "        U0=" + str(11) + '\n',
                                    wind_only=str(False).upper()))  # TODO how to input this?
 
             sep('Stand Definitions')

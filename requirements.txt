@@ -4,3 +4,4 @@ Pyinstaller==3.3
 Sphinx==1.6.5
 sphinx-rtd-theme==0.2.4
 mock==2.0.0
+GDAL>=2.1.3
