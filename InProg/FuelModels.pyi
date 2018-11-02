@@ -25,6 +25,7 @@ class FuelModel(NamedTuple):
     fine_fuel_moisture : float
     waf : float
     ros : float
+    color : str
 
 models : Dict[int, FuelModel]
 
