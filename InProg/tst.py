@@ -73,6 +73,7 @@ class LevelsetMode(Enum):
 
 _Stand_Template = Template("\n"
                            "&SURF ID='${stand_id}'\n"
+                           "RGB=${RGB},\n"
                            "FREE_SLIP=.TRUE.\n"
                            "VEG_LEVEL_SET_SPREAD=.${spread}.\n"
                            "VEG_LSET_ELLIPSE=.TRUE.\n"
@@ -83,17 +84,16 @@ _Stand_Template = Template("\n"
                            "VEG_LSET_SIGMA=${sav}\n"
                            "VEG_LSET_SURF_HEIGHT=${depth}\n"
                            "VEG_LSET_SURF_LOAD=${load}\n"
-                           "VEG_LSET_CHAR_FRACTION=0.2\n"  # Should I try to make this dynamic?
-                           "${crown}"
-                           "RGB=${RGB} /\n")
+                           "VEG_LSET_CHAR_FRACTION=0.2"  # Should I try to make this dynamic?
+                           "${crown} /\n")
 
-_CRUZ_Template = Template("VEG_LSET_CROWN_FIRE_HEAD_ROS_MODEL='CRUZ'\n"
+_CRUZ_Template = Template("\nVEG_LSET_CROWN_FIRE_HEAD_ROS_MODEL='CRUZ'\n"
                           "VEG_LSET_SURF_EFFM=${effm}\n"  # FINE FUEL MOISTURE
                           "VEG_LSET_FUEL_STRATA_GAP=${canopy_base_gap}\n"
                           "VEG_LSET_CROWNFIRE_ANGLE=90\n"
                           "VEG_LSET_CRUZ_PROB_CROWN=0.5\n")
 
-_SR_Template = Template("VEG_LSET_CROWN_FIRE_HEAD_ROS_MODEL='SR'\n"
+_SR_Template = Template("\nVEG_LSET_CROWN_FIRE_HEAD_ROS_MODEL='SR'\n"
                         "VEG_LSET_MODEL_FOR_PASSIVE_ROS = 'SR'\n"
                         "VEG_LSET_CANOPY_FMC=1\n"
                         "VEG_LSET_CANOPY_BASE_HEIGHT=${canopy_base_height}\n"
@@ -101,7 +101,7 @@ _SR_Template = Template("VEG_LSET_CROWN_FIRE_HEAD_ROS_MODEL='SR'\n"
 
 _COMMON_CROWN_Template = Template("VEG_LSET_WAF_${un}SHELTERED=${waf}\n"
                                   "VEG_LSET_CANOPY_BULK_DENSITY=${canopy_density}\n"
-                                  "VEG_LSET_CANOPY_HEIGHT=${canopy_height}\n")
+                                  "VEG_LSET_CANOPY_HEIGHT=${canopy_height}")
 
 
 def _output_surf(outfile, stand, crown_mode, levelset_mode):
@@ -126,9 +126,9 @@ def _output_surf(outfile, stand, crown_mode, levelset_mode):
             crown_str += _COMMON_CROWN_Template.substitute(un=un, waf=waf, canopy_density=canopy_density,
                                                            canopy_height=canopy_height)
     if levelset_mode.uses_thermal_elements:
-        crown_str += ("PART_ID='TE'\n"
+        crown_str += ("\nPART_ID='TE'\n"
                       "NPPC=1\n"
-                      "VEL=-0.01 \n")
+                      "VEL=-0.01")
 
     outfile.write(_Stand_Template.substitute(
         stand_id=stand[1],
@@ -194,20 +194,23 @@ def _output_meshes(outfile, meshes, mesh_res, ratio, elevations):
     # type: (BinaryIO, Iterable[MultiMesh], int, int, np.ndarray) -> ()
     # mesh_overhead = mesh_overhead + mesh_res - 1  # combine mesh_overhead with integer round up constant
     # Tuple Destructuring
+    min_z = elevations.min() // mesh_res - 1
+    max_z = 1+(elevations.max() + mesh_res - 1) // mesh_res
     for (mesh_pos_y, mesh_pos_x, size_y, size_x, rep_y, rep_x) in meshes:
         # print(mesh_pos_y, mesh_pos_x, size_y, size_x, rep_y, rep_x)
         for pos_y in xrange(mesh_pos_y, mesh_pos_y + size_y * rep_y, size_y):
             for pos_x in xrange(mesh_pos_x, mesh_pos_x + size_x * rep_x, size_x):
-                sub_elevation = elevations[pos_y // ratio: (pos_y + size_y + ratio - 1) // ratio,
-                                           pos_x // ratio: (pos_x + size_x + ratio - 1) // ratio]
+                #sub_elevation = elevations[pos_y // ratio: (pos_y + size_y + ratio - 1) // ratio,
+                #                           pos_x // ratio: (pos_x + size_x + ratio - 1) // ratio]
                 # round min_z down and max_z up to be aligned to global mesh
-                min_z = sub_elevation.min() // mesh_res - 1
-                max_z = (sub_elevation.max() + mesh_res - 1) // mesh_res
+                #min_z = sub_elevation.min() // mesh_res - 1
+                #max_z = 1+(sub_elevation.max() + mesh_res - 1) // mesh_res
                 outfile.write("&MESH IJK = {}, {}, {}, XB = {}, {}, {}, {}, {}, {} /\n".format(
                               size_x, size_y, max_z - min_z,  # Mesh dimensions
                               pos_x * mesh_res, (pos_x + size_x) * mesh_res,  # Mesh X begin and end coordinates
                               pos_y * mesh_res, (pos_y + size_y) * mesh_res,  # Y coordinates
                               min_z * mesh_res, max_z * mesh_res))  # Z coordinates
+
 
 
 # mesh_res must divide {RASTER_RES} evenly
@@ -298,6 +301,7 @@ def gen(levelset_mode, lower_vent_x, upper_vent_x, lower_vent_y, upper_vent_y,
             output.write(("&TIME T_END={time_span} /\n"
                           "\n"
                           "&MISC   TERRAIN_CASE=.TRUE.\n"
+                          "        SURF_DEFAULT='OPEN'\n"  # Simplifies Wind Venting
                           # Define one of UNCOUPLED or COUPLED to TRUE, the other defaults to FALSE
                           "        VEG_LEVEL_SET_{un}COUPLED=.TRUE.\n"
                           "        VEG_LEVEL_SET_SURFACE_HEATFLUX=.FALSE.\n"
@@ -350,11 +354,11 @@ def gen(levelset_mode, lower_vent_x, upper_vent_x, lower_vent_y, upper_vent_y,
                         elevation_lower = elevation - half_mesh_res
                         elevation_upper = elevation + half_mesh_res - 1 + (mesh_res & 1)  # Correction for odd rounding
                         max_max_x = x + 1
-                        assert elevation_lower <= elevation <= elevation_upper
-                        assert ((elevation_lower + half_mesh_res) // mesh_res) * mesh_res == elevation == \
-                               ((elevation_upper + half_mesh_res) // mesh_res) * mesh_res
-                        assert ((elevation_lower - 1 + half_mesh_res) // mesh_res) * mesh_res != elevation != (
-                                    (elevation_upper + 1 + half_mesh_res) // mesh_res) * mesh_res
+                        #assert elevation_lower <= elevation <= elevation_upper
+                        #assert ((elevation_lower + half_mesh_res) // mesh_res) * mesh_res == elevation == \
+                        #       ((elevation_upper + half_mesh_res) // mesh_res) * mesh_res
+                        #assert ((elevation_lower - 1 + half_mesh_res) // mesh_res) * mesh_res != elevation != (
+                        #            (elevation_upper + 1 + half_mesh_res) // mesh_res) * mesh_res
                         while max_max_x < raster_size_x and not founds[y, max_max_x] \
                                 and elevation_lower <= elevations[y, max_max_x] <= elevation_upper \
                                 and np.array_equal(k, raster[y, max_max_x]):
@@ -394,15 +398,21 @@ def gen(levelset_mode, lower_vent_x, upper_vent_x, lower_vent_y, upper_vent_y,
             sep('Footer')
 
             if not levelset_mode.is_simple:
-                output.write("-&SURF ID='wind',RAMP_V='wind', PROFILE='ATMOSPHERIC', Z0=10., PLE=0.143, VEL=-4 /\n"
-                             "-&RAMP ID='wind',F=1,T=0 /\n"
-                             "-&RAMP ID='wind',F=1,T=1 /\n"
-                             "-&VENT MB = XMIN, SURF_ID = 'wind' /\n"
-                             "-&VENT MB = XMAX, SURF_ID = 'OPEN' /\n"
-                             "-&VENT MB = YMIN, SURF_ID = 'MIRROR' /\n"
-                             "-&VENT MB = YMAX, SURF_ID = 'MIRROR' /\n"
-                             "-&VENT MB = ZMAX, SURF_ID = 'OPEN' /\n"
-                             .format())
+                min_z = elevations.min() // mesh_res - 1
+                max_z = 1 + (elevations.max() + mesh_res - 1) // mesh_res
+                max_y = raster_size_y * RASTER_RES
+                max_x = raster_size_x * RASTER_RES
+                # I don't know what PLE and Z0 are
+                output.write("&SURF ID='windX',RAMP_V='const1', PROFILE='ATMOSPHERIC',"
+                             " Z0=10., PLE=0.143, VEL={wind_vx} /\n"
+                             "&SURF ID='windY',RAMP_V='const1', PROFILE='ATMOSPHERIC',"
+                             " Z0=10., PLE=0.143, VEL={wind_vy} /\n"
+                             "&RAMP ID='const1',F=1,T=0 /\n"
+                             "&RAMP ID='const1',F=1,T={time_span} /\n"
+                             "&VENT XB = 0,0,0,{max_y}, {min_z}, {max_z}, SURF_ID = 'windX' /\n"
+                             "&VENT XB = 0,{max_x},0,0, {min_z}, {max_z}, SURF_ID = 'windY' /\n"
+                             .format(wind_vx=wind_vx, wind_vy=wind_vy, time_span=time_span,
+                                     max_x=max_x, max_y=max_y, min_z=min_z, max_z=max_z))
 
             output.write("-- Outputs\n"
                          "&DUMP DT_SLCF=1,DT_BNDF=1,DT_ISOF=10,DT_PL3D=200,SMOKE3D=.FALSE.{} /\n"
