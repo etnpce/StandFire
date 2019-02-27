@@ -126,7 +126,7 @@
     <script>
       //Called by the deferred load script
       function initMap() {
-        var map = new google.maps.Map(document.getElementById('map'), {
+        let map = new google.maps.Map(document.getElementById('map'), {
           center: {lat: 37.75, lng: -103.25}, //About Center of US
           zoom: 5, // Fits US on my screen, can't give better default
           mapTypeId: "hybrid", // I like it, editable by user
@@ -134,20 +134,23 @@
           scaleControl: true
         });
         
-        TheMap = map
+        TheMap = map // Useful for console debugging
         
-        var drawingManager = new google.maps.drawing.DrawingManager({
+        let rectangleOptions = {
+          strokeWeight: 3,
+          strokeOpacity: 0.6,
+          fillOpacity: 0.3,
+          editable: true,
+          map: map
+        }
+        
+        let drawingManager = new google.maps.drawing.DrawingManager({
           drawingControl: true,
           drawingControlOptions: {
             position: google.maps.ControlPosition.TOP_CENTER, //Override Bad default
             drawingModes: ['rectangle', 'marker', 'polyline']
           },
-          rectangleOptions: {
-            strokeWeight: 3,
-            strokeOpacity: 0.6,
-            fillOpacity: 0.3,
-            editable: true
-          },
+          rectangleOptions: rectangleOptions,
           markerOptions: {
             clickable: false, //Clickability is Annoying
             //Maybe find better Icon?
@@ -170,17 +173,23 @@
         });
         drawingManager.setMap(map);
         
-        TheDrawingManager = drawingManager
+        TheDrawingManager = drawingManager // Like TheMap, used for console debugging
         
-        var prevRect
+        let prevRect
+        
+        let editBndN = document.getElementById("rect_bound1_lat");
+        let editBndE = document.getElementById("rect_bound1_lng");
+        let editBndS = document.getElementById("rect_bound2_lat");
+        let editBndW = document.getElementById("rect_bound2_lng");
         function rectangleMoved(){
           let bnds = prevRect.getBounds()
           let ne = bnds.getNorthEast(), sw = bnds.getSouthWest()
-          document.getElementById("rect_bound1_lat").value = ne.lat();
-          document.getElementById("rect_bound1_lng").value = ne.lng();
-          document.getElementById("rect_bound2_lat").value = sw.lat();
-          document.getElementById("rect_bound2_lng").value = sw.lng();
+          editBndN.value = ne.lat();
+          editBndE.value = ne.lng();
+          editBndS.value = sw.lat();
+          editBndW.value = sw.lng();
         }
+        
         function rectanglecomplete(rect){
           if(prevRect){
             prevRect.setMap(null);//Only way to remove from map
@@ -195,55 +204,49 @@
         markers = []
         function moveMarker(){
           let pos = this.getPosition();//Event sources are passed through "this"
-          //markers_index set by my code on creation
-          document.getElementById("ignition_lat_input_"+this.markers_index).value = pos.lat()
-          document.getElementById("ignition_lng_input_"+this.markers_index).value = pos.lng()
+          //input_lng and input_lat set by my code on creation
+          this.input_lat.value = pos.lat()
+          this.input_lng.value = pos.lng()
         }
         function onMarker(mark){
-          mark.markers_index = markers.length
-          mark.ign_time = markers.length>0 ? markers[markers.length-1].ign_time + parseInt(document.getElementById("ignition_time_inc").value) : 1;// Thought this would be nice
+          mark.ign_time = markers.length>0 ? markers[markers.length-1].ign_time + parseInt(document.getElementById("ignition_time_inc").value) : 1;
           markers.push(mark);
-          mark.setLabel(mark.markers_index+1 + "")
           mark.addListener('position_changed', moveMarker)
           rebind_markers();
         }
-        function remMarker(mark){
-          markers[mark].setMap(null)
-          //shift and update later markers
-          for(let i = mark; i<markers.length-1;i++){
-            let mark = markers[i+1]
-            markers[i] = mark
-            mark.markers_index = i
-            mark.setLabel(i+1+"")
+        function remMarker(markid){
+          markers[markid].setMap(null)
+          // Why isn't there pop(index) or shift(index)?
+          for(let i = markid; i<markers.length-1;i++){
+            markers[i] = markers[i+1]
           }
           markers.pop()
           rebind_markers()
         }
         drawingManager.addListener('markercomplete', onMarker)
         
-        function onLine(line){
-          drawingManager.setDrawingMode('polyline')
-        }
-        drawingManager.addListener('polylinecomplete', onLine)
-        
         //Convenience function
-        let c = function(parent, type){
+        function c(parent, type){
             let e = document.createElement(type)
             parent.appendChild(e)
             return e
         }
+        
+        let ign_list = document.getElementById("ignition_points_list")
+        let n_ign_points_input = document.getElementById("n_ignition_points_input")
         //Redoing from scratch each time anything changes is the easiest way, and not too slow
         function rebind_markers(){
           //All details in the map are mirrored in the input boxes and vice-versa, adding new properties if needed
-          let ign_list = document.getElementById("ignition_points_list")
+          
           ign_list.innerHTML = "" // Clear List Completely
-          //Set hidden input
-          document.getElementById("n_ignition_points_input").value = markers.length + ""
+          //Set hidden input to number of markers
+          n_ign_points_input.value = markers.length + ""
           for(let i = 0; i<markers.length; i++){
               let mark = markers[i]
+              mark.setLabel(i+1+"")
               let pos = mark.getPosition()
               let li = c(ign_list,"li") //New list element
-              let set = c(li, 'fieldset') //Each element is boxed
+              let set = c(li, 'fieldset') //Each ignition point is in a boxed subfield
               
               //Create (Latitude: _, Longitude: _) with _ meaning inputs
               set.append('(')
@@ -258,6 +261,7 @@
               inputLat.name = 'ignition_lat_'+(i+1)
               inputLat.id="ignition_lat_input_"+i
               inputLat.value = pos.lat()
+              mark.input_lat = inputLat // Used for movement event
               
               set.append(', ')
               let labelLng = c(set, 'label')
@@ -271,6 +275,7 @@
               inputLng.name = 'ignition_lng_'+(i+1)
               inputLng.id="ignition_lng_input_"+i
               inputLng.value = pos.lng()
+              mark.input_lng = inputLng // Used for movement event
               
               set.append(', ')
               let labelIgn = c(set, 'label')
@@ -291,49 +296,39 @@
               but.innerText = 'Delete'
               
               //Number modification event closure to update map
-              inputLat.onchange = function(){
+              inputLng.onchange = inputLat.onchange = function(){
                 if(inputLat.checkValidity() && inputLng.checkValidity()){
                     //Can't use valueAsNumber because Edge
                     mark.setPosition({lat: parseFloat(inputLat.value), lng: parseFloat(inputLng.value)})
                 }
               }
-              inputLng.onchange = inputLat.onchange
-              //Closures to match previous, could be hoisted out and use 'this'
+              //These are closures because the one above is, but could be hoisted out and use 'this'
               inputIgn.onchange = function(){
                 if(inputIgn.checkValidity()){
                     mark.ign_time = parseFloat(inputIgn.value)
                 }
               }
+              
               but.onclick = function(){
                 remMarker(i);
               };
             }
           }
         
-        onRectBoundInput = function(){
-          let editN = document.getElementById("rect_bound1_lat");
-          let editE = document.getElementById("rect_bound1_lng");
-          let editS = document.getElementById("rect_bound2_lat");
-          let editW = document.getElementById("rect_bound2_lng");
-          if(editN.checkValidity() && editE.checkValidity() && editS.checkValidity() && editW.checkValidity()){
-            let n = parseFloat(editN.value), e = parseFloat(editE.value), s = parseFloat(editS.value), w = parseFloat(editW.value);
+        onRectBoundInput = function(){          
+          if(editBndN.checkValidity() && editBndE.checkValidity() && editBndS.checkValidity() && editBndW.checkValidity()){
+            let n = parseFloat(editBndN.value), e = parseFloat(editBndE.value), s = parseFloat(editBndS.value), w = parseFloat(editBndW.value);
             if(prevRect){
               prevRect.setMap(null);
             }
-            prevRect = new google.maps.Rectangle({
-              strokeWeight: 2,
-              strokeOpacity: 0.6,
-              fillOpacity: 0.45,
-              editable: true,
-              map: map,
-              bounds: {
+            prevRect = new google.maps.Rectangle(rectangleOptions);
+            prevRect.setBounds({
                 north: n,
                 south: s,
                 east: e,
                 west: w
-              }
-              });
-              prevRect.addListener('bounds_changed', rectangleMoved);
+            });
+            prevRect.addListener('bounds_changed', rectangleMoved);
           }
         }
         
@@ -351,6 +346,9 @@
               drawMarker.title = 'Place Ignition Points'
               drawMarker.setAttribute('aria-label', 'Place Ignition Points')
               let drawMarkerImg = drawMarker.querySelector('img')
+              
+              // The selection icons use a shared sprite-sheet
+              // This function moves from the marker sprite to the circle sprite 
               function checkMarkerImg(){
                   switch(drawMarkerImg.offsetTop){
                     case -176:
