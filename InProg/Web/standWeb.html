@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>StandFire - LandFire (In Progress)</title>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <style>
+      #map {
+        height: 100%;
+      }
+    
+      #maprow {
+        height: 75%;
+      }
+      
+      * {
+        box-sizing: border-box;
+      }
+        
+      .row::after {
+        content: "";
+        clear: both;
+        display: table;
+      }
+        
+      [class*="col-"] {
+        float: left;
+        padding: 10px;
+      }
+        
+      .col-1 {width: 8.33%;}
+      .col-2 {width: 16.66%;}
+      .col-3 {width: 25%;}
+      .col-4 {width: 33.33%;}
+      .col-5 {width: 41.66%;}
+      .col-6 {width: 50%;}
+      .col-7 {width: 58.33%;}
+      .col-8 {width: 66.66%;}
+      .col-9 {width: 75%;}
+      .col-10 {width: 83.33%;}
+      .col-11 {width: 91.66%;}
+      .col-12 {width: 100%;}
+      
+      html, body, form {
+          height: 100%;
+          margin: 0;
+          padding: 0;
+      }  
+      
+      html {
+        --font-family: "Lucida Sans", sans-serif;
+      }
+      
+      #ignition_points_list {
+        overflow-y:scroll;
+        height: -webkit-fill-available;
+      }
+      
+      .limit_height {
+        max-height: 100%
+      }
+    </style>
+  </head>
+  <body>
+    <form action = "" method="get"> 
+      <div id = 'maprow' class = 'row'>
+        <div id="map" class = 'col-6'></div>
+        <div class = 'col-6 limit_height'>
+            Bounds (Lat/Lng):<br>
+              &nbsp;&nbsp;NE Corner: (<label for = "rect_bound1_lat">Latitude:</label> <input id = "rect_bound1_lat" name = "rectBound1Lat" type = "number" min = "-90" max = "90" step = "any" required onchange="onRectBoundInput()">,<label for = "rect_bound1_lng">Longitude:</label><input id = "rect_bound1_lng" name="rectBound1Lng" type="number" min = "-180" max = "180" step = "any" required onchange="onRectBoundInput()">)<br>
+              &nbsp;&nbsp;SW Corner: (<label for = "rect_bound2_lat">Latitude:</label> <input id = "rect_bound2_lat" name = "rectBound2Lat" type = "number" min = "-90" max = "90" step = "any" required onchange="onRectBoundInput()">,<label for = "rect_bound2_lng">Longitude:</label><input id = "rect_bound2_lng" name="rectBound2Lng" type="number" min = "-180" max = "180" step = "any" required onchange="onRectBoundInput()">)<br>
+            <br>
+            <label> Ignition Time Increment: <input type='number' id='ignition_time_inc' value=0 step = '1'></label><br>
+            Ignition Points (use map to create):
+              <input type = 'hidden' name = 'n_ignition_points' id = 'n_ignition_points_input' value='0'>
+              <ol id = 'ignition_points_list' class = 'limit_height'>
+                <!-- Dynamically filled -->
+              </ol>
+        </div>
+      </div>
+      <label for = 'title_input'> Run Title: </label>
+      <input type="text" id='title_input' name='title' required><br>
+      <label> Simulation Length: <input type='number' id='time_span_input' name='time_span' min='1' step = '1' value=300 required> seconds</label>
+      <br>
+      
+      Wind Speed: (<label for = 'wind_speed_n_input'>Northward: </label><input type = "number" id='wind_speed_n_input' name='wind_speed_n' step='any' value=0 required>, <label for = 'wind_speed_e_input'>Eastward: </label><input type = "number" id='wind_speed_e_input' name='wind_speed_e' step='any' value=0 required>)<br>
+      
+      <details>
+      <summary> Humidity:<br></summary>
+      <fieldset>
+        <label for = 'humidity_d1hr_input'> Dead&lt;1Hour: </label><input type = "number" value = '0.06' min='0' max ='1' step = 'any' name = 'humidity_d1hr' id='humidity_d1hr_input' required><br>
+        <label for = 'humidity_d10hr_input'> Dead&lt;10Hours: </label><input type = "number" value = '0.07' min='0' max ='1' step = 'any' name = 'humidity_d10hr' id='humidity_d10hr_input' required><br>
+        <label for = 'humidity_d100hr_input'> Dead&lt;100Hours: </label><input type = "number" value = '0.08' min='0' max ='1' step = 'any' name = 'humidity_d100hr' id='humidity_d100hr_input' required><br>
+        <label for = 'humidity_herb_input'> Herbaceous: </label><input type = "number" value = '0.60' min='0' max ='1' step = 'any' name = 'humidity_herb' id='humidity_herb_input' required><br>
+        <label for = 'humidity_wood_input'> Wooded: </label><input type = "number" value = '0.90' min='0' max ='1' step = 'any' name = 'humidity_wood' id='humidity_wood_input' required><br>
+      </fieldset>
+      </details>
+      <details>
+        <summary>Advanced Options:<br></summary>
+        <fieldset>
+            <label for = 'levelset_mode_select'> LevelSet Mode: </label>
+            <select id = 'levelset_mode_select' name = 'levelset_mode'>
+              <option value="simple" selected>Simple</option>
+              <option value="simple_wind">Simple With Wind Calculation</option>
+              <option value="coupled_no_te">Full Without Thermal Elements</option>
+              <option value="full">Full</option>
+            </select><br>
+            <label for ='n_meshes_input'> Number of cores to use for simulation: </label>
+            <input type=number id='n_meshes_input' name='n_meshes' min = '1' value='1' step='1'><br>
+            <label for='mesh_res_select'>Mesh Resolution: </label>
+            <select name = 'mesh_res' id='mesh_res_select'>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+              <option value="10" selected>10</option>
+              <option value="15">15</option>
+              <option value="30">30</option>
+            </select><br>
+        </fieldset>
+      </details>
+      <br>
+      <input type = "submit" value='Generate'>
+    </form>
+    <script>
+      //Called by the deferred load script
+      function initMap() {
+        var map = new google.maps.Map(document.getElementById('map'), {
+          center: {lat: 37.75, lng: -103.25}, //About Center of US
+          zoom: 5, // Fits US on my screen, can't give better default
+          mapTypeId: "hybrid", // I like it, editable by user
+          streetViewControl: false, // I see no reason to enable street View
+          scaleControl: true
+        });
+        
+        TheMap = map
+        
+        var drawingManager = new google.maps.drawing.DrawingManager({
+          drawingControl: true,
+          drawingControlOptions: {
+            position: google.maps.ControlPosition.TOP_CENTER, //Override Bad default
+            drawingModes: ['rectangle', 'marker', 'polyline']
+          },
+          rectangleOptions: {
+            strokeWeight: 3,
+            strokeOpacity: 0.6,
+            fillOpacity: 0.3,
+            editable: true
+          },
+          markerOptions: {
+            clickable: false, //Clickability is Annoying
+            //Maybe find better Icon?
+            icon: {
+              fillColor: "#FF2222", 
+              fillOpacity: 0.4, 
+              path: google.maps.SymbolPath.CIRCLE, 
+              scale: 9,
+              strokeWeight: 1
+            },
+            draggable:true
+          },
+          polylineOptions: {
+            geodesic: true,
+            //I have no idea what I want for these.
+            strokeColor: '#EE0000',
+            strokeOpacity: .5,
+            strokeWeight: 3
+          }
+        });
+        drawingManager.setMap(map);
+        
+        TheDrawingManager = drawingManager
+        
+        var prevRect
+        function rectangleMoved(){
+          let bnds = prevRect.getBounds()
+          let ne = bnds.getNorthEast(), sw = bnds.getSouthWest()
+          document.getElementById("rect_bound1_lat").value = ne.lat();
+          document.getElementById("rect_bound1_lng").value = ne.lng();
+          document.getElementById("rect_bound2_lat").value = sw.lat();
+          document.getElementById("rect_bound2_lng").value = sw.lng();
+        }
+        function rectanglecomplete(rect){
+          if(prevRect){
+            prevRect.setMap(null);//Only way to remove from map
+          }
+          prevRect = rect;
+          rectangleMoved();
+          rect.addListener('bounds_changed', rectangleMoved);
+          drawingManager.setDrawingMode(null); //Makes interaction nicer
+        }  
+        drawingManager.addListener('rectanglecomplete', rectanglecomplete)
+        
+        markers = []
+        function moveMarker(){
+          let pos = this.getPosition();//Event sources are passed through "this"
+          //markers_index set by my code on creation
+          document.getElementById("ignition_lat_input_"+this.markers_index).value = pos.lat()
+          document.getElementById("ignition_lng_input_"+this.markers_index).value = pos.lng()
+        }
+        function onMarker(mark){
+          mark.markers_index = markers.length
+          mark.ign_time = markers.length>0 ? markers[markers.length-1].ign_time + parseInt(document.getElementById("ignition_time_inc").value) : 1;// Thought this would be nice
+          markers.push(mark);
+          mark.setLabel(mark.markers_index+1 + "")
+          mark.addListener('position_changed', moveMarker)
+          rebind_markers();
+        }
+        function remMarker(mark){
+          markers[mark].setMap(null)
+          //shift and update later markers
+          for(let i = mark; i<markers.length-1;i++){
+            let mark = markers[i+1]
+            markers[i] = mark
+            mark.markers_index = i
+            mark.setLabel(i+1+"")
+          }
+          markers.pop()
+          rebind_markers()
+        }
+        drawingManager.addListener('markercomplete', onMarker)
+        
+        function onLine(line){
+          drawingManager.setDrawingMode('polyline')
+        }
+        drawingManager.addListener('polylinecomplete', onLine)
+        
+        //Convenience function
+        let c = function(parent, type){
+            let e = document.createElement(type)
+            parent.appendChild(e)
+            return e
+        }
+        //Redoing from scratch each time anything changes is the easiest way, and not too slow
+        function rebind_markers(){
+          //All details in the map are mirrored in the input boxes and vice-versa, adding new properties if needed
+          let ign_list = document.getElementById("ignition_points_list")
+          ign_list.innerHTML = "" // Clear List Completely
+          //Set hidden input
+          document.getElementById("n_ignition_points_input").value = markers.length + ""
+          for(let i = 0; i<markers.length; i++){
+              let mark = markers[i]
+              let pos = mark.getPosition()
+              let li = c(ign_list,"li") //New list element
+              let set = c(li, 'fieldset') //Each element is boxed
+              
+              //Create (Latitude: _, Longitude: _) with _ meaning inputs
+              set.append('(')
+              let labelLat = c(set, 'label')
+              labelLat.append('Latitude: ')
+              
+              let inputLat = c(labelLat, 'input')
+              inputLat.type = 'number'
+              inputLat.min = '-90'
+              inputLat.max = '90'
+              inputLat.step = 'any'
+              inputLat.name = 'ignition_lat_'+(i+1)
+              inputLat.id="ignition_lat_input_"+i
+              inputLat.value = pos.lat()
+              
+              set.append(', ')
+              let labelLng = c(set, 'label')
+              labelLng.append("Longitude: ")
+              
+              let inputLng = c(labelLng, 'input')
+              inputLng.type = 'number'
+              inputLng.min = '-180'
+              inputLng.max = '180'
+              inputLng.step = 'any'
+              inputLng.name = 'ignition_lng_'+(i+1)
+              inputLng.id="ignition_lng_input_"+i
+              inputLng.value = pos.lng()
+              
+              set.append(', ')
+              let labelIgn = c(set, 'label')
+              labelIgn.append("Ignition Time: ")
+              
+              let inputIgn = c(labelIgn, 'input')
+              inputIgn.type = 'number'
+              inputIgn.min = '0'
+              inputIgn.step = '1'
+              inputIgn.name = 'ignition_time_'+(i+1)
+              inputIgn.value = mark.ign_time
+              
+              set.append(') ')
+              
+              //Add delete button
+              let but = c(set, 'button');
+              but.type = 'button' //Defaults to 'Submit'
+              but.innerText = 'Delete'
+              
+              //Number modification event closure to update map
+              inputLat.onchange = function(){
+                if(inputLat.checkValidity() && inputLng.checkValidity()){
+                    //Can't use valueAsNumber because Edge
+                    mark.setPosition({lat: parseFloat(inputLat.value), lng: parseFloat(inputLng.value)})
+                }
+              }
+              inputLng.onchange = inputLat.onchange
+              //Closures to match previous, could be hoisted out and use 'this'
+              inputIgn.onchange = function(){
+                if(inputIgn.checkValidity()){
+                    mark.ign_time = parseFloat(inputIgn.value)
+                }
+              }
+              but.onclick = function(){
+                remMarker(i);
+              };
+            }
+          }
+        
+        onRectBoundInput = function(){
+          let editN = document.getElementById("rect_bound1_lat");
+          let editE = document.getElementById("rect_bound1_lng");
+          let editS = document.getElementById("rect_bound2_lat");
+          let editW = document.getElementById("rect_bound2_lng");
+          if(editN.checkValidity() && editE.checkValidity() && editS.checkValidity() && editW.checkValidity()){
+            let n = parseFloat(editN.value), e = parseFloat(editE.value), s = parseFloat(editS.value), w = parseFloat(editW.value);
+            if(prevRect){
+              prevRect.setMap(null);
+            }
+            prevRect = new google.maps.Rectangle({
+              strokeWeight: 2,
+              strokeOpacity: 0.6,
+              fillOpacity: 0.45,
+              editable: true,
+              map: map,
+              bounds: {
+                north: n,
+                south: s,
+                east: e,
+                west: w
+              }
+              });
+              prevRect.addListener('bounds_changed', rectangleMoved);
+          }
+        }
+        
+        //Ugly hack because drawingManager Control tooltips aren't in the api
+        google.maps.event.addListenerOnce(map, 'idle', () => {
+          var interval = setInterval(() => {
+            let stopDrawing = document.querySelector("div.gmnoprint > div > div[role='button'][title='Stop drawing']")
+            if(stopDrawing){
+              stopDrawing.title = 'Move and Modify'
+              stopDrawing.setAttribute('aria-label', 'Move map, Modify Bounds, and Drag Ignition Points')
+              let drawARectangle = document.querySelector("div.gmnoprint > div > div[role='button'][title='Draw a rectangle']")
+              drawARectangle.title = 'Choose Bounds'
+              drawARectangle.setAttribute('aria-label', 'Choose Bounds')
+              let drawMarker = document.querySelector("div.gmnoprint > div > div[role='button'][title='Add a marker']")
+              drawMarker.title = 'Place Ignition Points'
+              drawMarker.setAttribute('aria-label', 'Place Ignition Points')
+              let drawMarkerImg = drawMarker.querySelector('img')
+              function checkMarkerImg(){
+                  switch(drawMarkerImg.offsetTop){
+                    case -176:
+                        drawMarkerImg.style.top = '-160px'
+                        break;
+                    case -112:
+                        drawMarkerImg.style.top = '0px'
+                    default:
+                  }
+              }
+              checkMarkerImg()
+              let MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver
+              let observer = new MutationObserver(checkMarkerImg);
+              observer.observe(drawMarkerImg, {
+                attributes: true
+              });
+              clearInterval(interval)
+            }
+          }, 100)
+          setTimeout(() => clearInterval(interval), 5000) // Just in case
+        })
+      }
+      
+    </script>
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDRIqm0Pu-sU4_i5EyTJX4ZImcK7ujoIcg&callback=initMap&libraries=drawing">
+    </script>
+  </body>
+</html>
