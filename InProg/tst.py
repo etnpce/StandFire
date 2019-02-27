@@ -176,8 +176,11 @@ def _split_meshes(meshes, factor):
     # type: (Iterable[MultiMesh], int) -> Generator[MultiMesh]
     # Tuple Destructuring
     for (pos_y, pos_x, size_y, size_x, rep_y, rep_x) in meshes:
+        # Split larger dimension into factor as equally as possible
+        #
+        # Some of size (size // factor), and the rest of size (1 + (size // factor))
         if size_x > size_y:
-            sub_size, excess = divmod(size_x, factor)
+            sub_size, excess = divmod(size_x, factor)  # Excess is the number of meshes with +1 size
             sub_reps = rep_x * (factor - excess)
             yield MultiMesh(pos_y, pos_x, size_y, sub_size, rep_y, sub_reps)
             if excess > 0:
@@ -200,17 +203,11 @@ def _output_meshes(outfile, meshes, mesh_res, ratio, elevations):
         # print(mesh_pos_y, mesh_pos_x, size_y, size_x, rep_y, rep_x)
         for pos_y in xrange(mesh_pos_y, mesh_pos_y + size_y * rep_y, size_y):
             for pos_x in xrange(mesh_pos_x, mesh_pos_x + size_x * rep_x, size_x):
-                #sub_elevation = elevations[pos_y // ratio: (pos_y + size_y + ratio - 1) // ratio,
-                #                           pos_x // ratio: (pos_x + size_x + ratio - 1) // ratio]
-                # round min_z down and max_z up to be aligned to global mesh
-                #min_z = sub_elevation.min() // mesh_res - 1
-                #max_z = 1+(sub_elevation.max() + mesh_res - 1) // mesh_res
                 outfile.write("&MESH IJK = {}, {}, {}, XB = {}, {}, {}, {}, {}, {} /\n".format(
                               size_x, size_y, max_z - min_z,  # Mesh dimensions
                               pos_x * mesh_res, (pos_x + size_x) * mesh_res,  # Mesh X begin and end coordinates
                               pos_y * mesh_res, (pos_y + size_y) * mesh_res,  # Y coordinates
                               min_z * mesh_res, max_z * mesh_res))  # Z coordinates
-
 
 
 # mesh_res must divide {RASTER_RES} evenly
@@ -266,9 +263,6 @@ def gen(levelset_mode, lower_vent_x, upper_vent_x, lower_vent_y, upper_vent_y,
         raster = raster[y_min:y_max, x_min:x_max, ::]
         raster_size_y = raster.shape[0]
         raster_size_x = raster.shape[1]
-        # Canopy Height is in decimeters, round up to meters and then add fixed overhead
-        # mesh_overhead = (raster[:, :, 6].max() + 9) // 10 + MESH_OVERHEAD
-        # old: int(data.GetRasterBand(6).GetMetadataItem("CANOPY_HT_MAX"))
 
         elevations = raster[:, :, 0]  # Not sure if this is slower than getting it separately
         raster = raster[:, :, 3:]  # Convenience, might gain speed
@@ -282,7 +276,7 @@ def gen(levelset_mode, lower_vent_x, upper_vent_x, lower_vent_y, upper_vent_y,
         for factor in reversed(prime_facts(n_meshes)):  # Perform large splits first
             meshes = _split_meshes(meshes, factor)
 
-        # Dict comprehensions don't skip repeated keys
+        # Dict comprehensions don't skip repeated keys, so use set comprehension to prevent them
         stand_map = {k: models[int(k[0])].model_id + '_' + str(i)
                      for (k, i) in izip({tuple(x) for y in raster for x in y}, count(1))}
         # type: Dict[Tuple[np.int16, np.int16, np.int16, np.int16, np.int16], str]
@@ -314,7 +308,7 @@ def gen(levelset_mode, lower_vent_x, upper_vent_x, lower_vent_y, upper_vent_y,
                           "\n"
                           "&RADI RADIATION=.FALSE. /\n"
                           ).format(time_span=time_span,
-                                   un="" if levelset_mode.is_coupled else "UN",
+                                   un="UN" if not levelset_mode.is_coupled else "",
                                    thermal_elements=str(levelset_mode.uses_thermal_elements).upper(),
                                    u0="        U0={}\n".format(wind_vx) if levelset_mode.is_simple else "",
                                    v0="        V0={}\n".format(wind_vy) if levelset_mode.is_simple else "",
@@ -344,45 +338,52 @@ def gen(levelset_mode, lower_vent_x, upper_vent_x, lower_vent_y, upper_vent_y,
 
             sep('Ground and Stands')
 
+            # Used to know which cells have already been output
             founds = np.zeros([raster_size_y, raster_size_x], dtype=np.bool8, order='C')
             for y in xrange(0, raster_size_y):
                 for x in xrange(0, raster_size_x):
                     if not founds[y, x]:
                         k = raster[y, x]
-                        # round half-up to nearest mesh_res
+                        # Round half-up to nearest mesh_res
                         elevation = ((elevations[y, x] + half_mesh_res) // mesh_res) * mesh_res
+                        # Used to check whether other elevations round to this one without rounding them all
                         elevation_lower = elevation - half_mesh_res
                         elevation_upper = elevation + half_mesh_res - 1 + (mesh_res & 1)  # Correction for odd rounding
+
+                        # This section greedily merges output obstacles into largest possible rectangles
+
+                        # Find maximum 1-tall rectangle
                         max_max_x = x + 1
-                        #assert elevation_lower <= elevation <= elevation_upper
-                        #assert ((elevation_lower + half_mesh_res) // mesh_res) * mesh_res == elevation == \
-                        #       ((elevation_upper + half_mesh_res) // mesh_res) * mesh_res
-                        #assert ((elevation_lower - 1 + half_mesh_res) // mesh_res) * mesh_res != elevation != (
-                        #            (elevation_upper + 1 + half_mesh_res) // mesh_res) * mesh_res
                         while max_max_x < raster_size_x and not founds[y, max_max_x] \
                                 and elevation_lower <= elevations[y, max_max_x] <= elevation_upper \
                                 and np.array_equal(k, raster[y, max_max_x]):
                             max_max_x += 1
                         max_max_y = y + 1
                         max_size = max_max_x - x  # max_max_x is one too big, but subtracting x goes one too small
+
+                        # Extend as far down as possible
                         max_y = y + 1
                         prev_max_x = max_max_x
                         while max_y < raster_size_y and not founds[max_y, x] \
                                 and elevation_lower <= elevations[max_y, x] <= elevation_upper \
                                 and np.array_equal(k, raster[max_y, x]):
+                            # Scan for largest possible width
                             max_x = x + 1
                             while max_x < prev_max_x and not founds[max_y, max_x] \
                                     and elevation_lower <= elevations[max_y, max_x] <= elevation_upper \
                                     and np.array_equal(k, raster[max_y, max_x]):
                                 max_x += 1
+                            # Taller rectangles can't be wider than the widest this one can
                             prev_max_x = max_x
                             max_y += 1  # Moved here so that max_y is one past valid for saving of max_max_y
+                            # Check if max width rectangle of this height is new largest
                             size = (max_x - x) * (max_y - y)
                             if size > max_size:
                                 max_size = size
                                 max_max_x = max_x
                                 max_max_y = max_y
 
+                        # Mark all cells contained in this obstacle
                         for y2 in xrange(y, max_max_y):
                             for x2 in xrange(x, max_max_x):
                                 founds[y2, x2] = True
