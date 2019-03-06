@@ -51,7 +51,7 @@
         --font-family: "Lucida Sans", sans-serif;
       }
       
-      #ignition_points_list {
+      #igniters_list {
         overflow-y:scroll;
         height: -webkit-fill-available;
       }
@@ -71,9 +71,9 @@
               &nbsp;&nbsp;SW Corner: (<label for = "rect_bound2_lat">Latitude:</label> <input id = "rect_bound2_lat" name = "rectBound2Lat" type = "number" min = "-90" max = "90" step = "any" required onchange="onRectBoundInput()">,<label for = "rect_bound2_lng">Longitude:</label><input id = "rect_bound2_lng" name="rectBound2Lng" type="number" min = "-180" max = "180" step = "any" required onchange="onRectBoundInput()">)<br>
             <br>
             <label> Ignition Time Increment: <input type='number' id='ignition_time_inc' value=0 step = '1'></label><br>
-            Ignition Points (use map to create):
-              <input type = 'hidden' name = 'n_ignition_points' id = 'n_ignition_points_input' value='0'>
-              <ol id = 'ignition_points_list' class = 'limit_height'>
+            Igniters (use map to create):
+              <input type = 'hidden' name = 'n_igniters' id = 'n_igniters_input' value='0'>
+              <ol id = 'igniters_list' class = 'limit_height'>
                 <!-- Dynamically filled -->
               </ol>
         </div>
@@ -165,6 +165,13 @@
           },
           polylineOptions: {
             geodesic: true,
+            editable: true,
+            draggable: true,
+            icons: [{
+              icon: {path: google.maps.SymbolPath.FORWARD_OPEN_ARROW},
+                offset: '25%',
+                repeat: '50%'
+              }],
             //I have no idea what I want for these.
             strokeColor: '#EE0000',
             strokeOpacity: .5,
@@ -201,29 +208,83 @@
         }  
         drawingManager.addListener('rectanglecomplete', rectanglecomplete)
         
-        markers = []
+        igniters = []
         function moveMarker(){
           let pos = this.getPosition();//Event sources are passed through "this"
           //input_lng and input_lat set by my code on creation
           this.input_lat.value = pos.lat()
           this.input_lng.value = pos.lng()
         }
+        
+        let ign_time_inc_input = document.getElementById("ignition_time_inc")
         function onMarker(mark){
-          mark.ign_time = markers.length>0 ? markers[markers.length-1].ign_time + parseInt(document.getElementById("ignition_time_inc").value) : 1;
-          markers.push(mark);
+          if(igniters.length > 0){
+            let last = igniters[igniters.length - 1]
+            switch(last.igniter_type){
+              case "mark":
+                mark.ign_time = last.ign_time + parseInt(ign_time_inc_input.value)
+                break;
+              case "line":
+                mark.ign_time = last.ign_end_time + parseInt(ign_time_inc_input.value)
+                break;
+            }
+          }else mark.ign_time = 1;
+          mark.igniter_type = "mark"
+          igniters.push(mark);
           mark.addListener('position_changed', moveMarker)
-          rebind_markers();
+          rebind_igniters();
         }
-        function remMarker(markid){
-          markers[markid].setMap(null)
-          // Why isn't there pop(index) or shift(index)?
-          for(let i = markid; i<markers.length-1;i++){
-            markers[i] = markers[i+1]
+        
+        function onMoveLine(line){
+          //let loopBreaker= false;
+          return function(){
+            //if(loopBreaker) return console.log("Broke loop!");
+            //loopBreaker = true;
+            while(this.length > 2){
+              this.removeAt(1);
+            }
+            let start = this.getAt(0), end = this.getAt(1)
+            line.input_start_lat.value = start.lat();
+            line.input_start_lng.value = start.lng();
+            line.input_end_lat.value = end.lat();
+            line.input_end_lng.value = end.lng();
+            //loopBreaker = false;
           }
-          markers.pop()
-          rebind_markers()
+        }
+        
+        function onLine(line){
+          if(igniters.length > 0){
+            let last = igniters[igniters.length - 1]
+            switch(last.igniter_type){
+              case "mark":
+                line.ign_start_time = last.ign_time
+                break;
+              case "line":
+                line.ign_start_time = last.ign_end_time
+                break;
+            }
+          }else line.ign_start_time = 1;
+          line.ign_end_time = line.ign_start_time + parseInt(ign_time_inc_input.value);
+          line.igniter_type = "line"
+          igniters.push(line);
+          let moveHandler = onMoveLine(line);
+          let path = line.getPath()
+          path.addListener('insert_at', moveHandler)
+          path.addListener('set_at', moveHandler)
+          rebind_igniters();
+        }
+        
+        function remIgniter(id){
+          igniters[id].setMap(null)
+          // Why isn't there pop(index) or shift(index)?
+          for(let i = id; i<igniters.length-1;i++){
+            igniters[i] = igniters[i+1]
+          }
+          igniters.pop()
+          rebind_igniters()
         }
         drawingManager.addListener('markercomplete', onMarker)
+        drawingManager.addListener('polylinecomplete', onLine)
         
         //Convenience function
         function c(parent, type){
@@ -232,85 +293,129 @@
             return e
         }
         
-        let ign_list = document.getElementById("ignition_points_list")
-        let n_ign_points_input = document.getElementById("n_ignition_points_input")
+        //Create (Latitude: _, Longitude: _, Ignition Time: _) with _ meaning inputs, and return the input elements
+        function createTripleInput(parentSet, initpos, initIgnTime, postfix){
+          let set = parentSet // Too lazy to rename in body
+          set.append('(')
+          let labelLat = c(set, 'label')
+          labelLat.append('Latitude: ')
+          
+          let inputLat = c(labelLat, 'input')
+          inputLat.type = 'number'
+          inputLat.min = '-90'
+          inputLat.max = '90'
+          inputLat.step = 'any'
+          inputLat.name = 'ignition_lat_'+postfix
+          inputLat.value = initpos.lat()
+          
+          set.append(', ')
+          let labelLng = c(set, 'label')
+          labelLng.append("Longitude: ")
+          
+          let inputLng = c(labelLng, 'input')
+          inputLng.type = 'number'
+          inputLng.min = '-180'
+          inputLng.max = '180'
+          inputLng.step = 'any'
+          inputLng.name = 'ignition_lng_'+postfix
+          inputLng.value = initpos.lng()
+          
+          set.append(', ')
+          let labelIgn = c(set, 'label')
+          labelIgn.append("Ignition Time: ")
+          
+          let inputIgn = c(labelIgn, 'input')
+          inputIgn.type = 'number'
+          inputIgn.min = '0'
+          inputIgn.step = '1'
+          inputIgn.name = 'ignition_time_'+postfix
+          inputIgn.value = initIgnTime
+          
+          set.append(') ')
+          
+          return [inputLat, inputLng, inputIgn]
+        }
+        
+        let igniters_list = document.getElementById("igniters_list")
+        let n_igniters_input = document.getElementById("n_igniters_input")
         //Redoing from scratch each time anything changes is the easiest way, and not too slow
-        function rebind_markers(){
+        function rebind_igniters(){
           //All details in the map are mirrored in the input boxes and vice-versa, adding new properties if needed
           
-          ign_list.innerHTML = "" // Clear List Completely
-          //Set hidden input to number of markers
-          n_ign_points_input.value = markers.length + ""
-          for(let i = 0; i<markers.length; i++){
-              let mark = markers[i]
-              mark.setLabel(i+1+"")
-              let pos = mark.getPosition()
-              let li = c(ign_list,"li") //New list element
-              let set = c(li, 'fieldset') //Each ignition point is in a boxed subfield
+          igniters_list.innerHTML = "" // Clear List Completely
+          //Set hidden input to number of igniters
+          n_igniters_input.value = igniters.length + ""
+          for(let i = 0; i<igniters.length; i++){
+              let igniter = igniters[i]
               
-              //Create (Latitude: _, Longitude: _) with _ meaning inputs
-              set.append('(')
-              let labelLat = c(set, 'label')
-              labelLat.append('Latitude: ')
+              let li = c(igniters_list,"li") //New list element
+              let set = c(li, 'fieldset') //Each ignition object control is in a boxed subfield
               
-              let inputLat = c(labelLat, 'input')
-              inputLat.type = 'number'
-              inputLat.min = '-90'
-              inputLat.max = '90'
-              inputLat.step = 'any'
-              inputLat.name = 'ignition_lat_'+(i+1)
-              inputLat.id="ignition_lat_input_"+i
-              inputLat.value = pos.lat()
-              mark.input_lat = inputLat // Used for movement event
+              let inputType = c(set, 'input');
+              inputType.type = 'hidden';
+              inputType.name = 'igniter_type'+(i+1);
+              inputType.value = igniter.igniter_type;
               
-              set.append(', ')
-              let labelLng = c(set, 'label')
-              labelLng.append("Longitude: ")
-              
-              let inputLng = c(labelLng, 'input')
-              inputLng.type = 'number'
-              inputLng.min = '-180'
-              inputLng.max = '180'
-              inputLng.step = 'any'
-              inputLng.name = 'ignition_lng_'+(i+1)
-              inputLng.id="ignition_lng_input_"+i
-              inputLng.value = pos.lng()
-              mark.input_lng = inputLng // Used for movement event
-              
-              set.append(', ')
-              let labelIgn = c(set, 'label')
-              labelIgn.append("Ignition Time: ")
-              
-              let inputIgn = c(labelIgn, 'input')
-              inputIgn.type = 'number'
-              inputIgn.min = '0'
-              inputIgn.step = '1'
-              inputIgn.name = 'ignition_time_'+(i+1)
-              inputIgn.value = mark.ign_time
-              
-              set.append(') ')
+              if(igniter.igniter_type == "mark"){
+                let mark = igniter
+                mark.setLabel(i+1+"")
+                let pos = mark.getPosition()
+                
+                let [inputLat, inputLng, inputIgn] = createTripleInput(set, pos, mark.ign_time, (i+1) + "")
+                
+                mark.input_lat = inputLat
+                mark.input_lng = inputLng
+                
+                //Number modification event closure to update map
+                inputLng.onchange = inputLat.onchange = function(){
+                  if(inputLat.checkValidity() && inputLng.checkValidity()){
+                      //Can't use valueAsNumber because Edge
+                      mark.setPosition({lat: parseFloat(inputLat.value), lng: parseFloat(inputLng.value)})
+                  }
+                }
+                
+                inputIgn.onchange = function(){
+                  if(inputIgn.checkValidity()){
+                      mark.ign_time = parseFloat(inputIgn.value)
+                  }
+                }
+                
+              }else if(igniter.igniter_type = "line"){
+                let line = igniter
+                let path = line.getPath();
+                
+                set.append('Start Point: ');
+                ([line.input_start_lat, line.input_start_lng, line.input_start_ign_time] = createTripleInput(set, path.getAt(0), line.ign_start_time, "start_"+(i+1)))
+                set.append(',')
+                c(set, 'br')
+                set.append('End Point: ');
+                ([line.input_end_lat, line.input_end_lng, line.input_end_ign_time] = createTripleInput(set, path.getAt(1), line.ign_end_time, "end_" + (i+1)))
+                c(set, 'br')
+                
+                //console.log([line.input_start_lat, line.input_start_lng, line.input_start_ign_time, line.input_end_lat, line.input_end_lng, line.input_end_ign_time]);
+                line.input_start_lat.onchange = line.input_start_lng.onchange = line.input_end_lat.onchange = line.input_end_lng.onchange = function(){
+                  if(line.input_start_lat.checkValidity() && line.input_start_lng.checkValidity() && line.input_end_lat.checkValidity() && line.input_end_lng.checkValidity()){
+                      //Can't use valueAsNumber because Edge
+                      let startLat = parseFloat(line.input_start_lat.value), startLng = parseFloat(line.input_start_lng.value), endLat = parseFloat(line.input_end_lat.value), endLng = parseFloat(line.input_end_lng.value)
+                      path.setAt(0, {lat: () => startLat, lng: () => startLng})
+                      path.setAt(1, {lat: () => endLat, lng: () => endLng})
+                  }
+                }
+                
+                line.input_start_ign_time.onchange = line.input_end_ign_time.onchange = function(){
+                  if(line.input_start_ign_time.checkValidity() && line.input_end_ign_time.checkValidity()){
+                      line.ign_start_time = parseFloat(line.input_start_ign_time.value)
+                      line.ign_end_time = parseFloat(line.input_end_ign_time.value)
+                  }
+                }
+              }
               
               //Add delete button
               let but = c(set, 'button');
               but.type = 'button' //Defaults to 'Submit'
               but.innerText = 'Delete'
-              
-              //Number modification event closure to update map
-              inputLng.onchange = inputLat.onchange = function(){
-                if(inputLat.checkValidity() && inputLng.checkValidity()){
-                    //Can't use valueAsNumber because Edge
-                    mark.setPosition({lat: parseFloat(inputLat.value), lng: parseFloat(inputLng.value)})
-                }
-              }
-              //These are closures because the one above is, but could be hoisted out and use 'this'
-              inputIgn.onchange = function(){
-                if(inputIgn.checkValidity()){
-                    mark.ign_time = parseFloat(inputIgn.value)
-                }
-              }
-              
               but.onclick = function(){
-                remMarker(i);
+                  remIgniter(i);
               };
             }
           }
@@ -332,7 +437,7 @@
           }
         }
         
-        //Ugly hack because drawingManager Control tooltips aren't in the api
+        //Ugly hack because drawingManager Control tool-tips aren't in the api
         google.maps.event.addListenerOnce(map, 'idle', () => {
           var interval = setInterval(() => {
             let stopDrawing = document.querySelector("div.gmnoprint > div > div[role='button'][title='Stop drawing']")
@@ -369,6 +474,16 @@
             }
           }, 100)
           setTimeout(() => clearInterval(interval), 5000) // Just in case
+        })
+        
+        // Make polylines complete immediately
+        document.getElementById("map").addEventListener("click", (event) => {
+          // Determine whether user is placing a polyline by seeing which div was clicked 
+          // I had to choose a differentiator and decided style.zIndex was least likely to break
+          if(drawingManager.drawingMode == "polyline" && event.target.style.zIndex > 1e9){
+            // Quickly click again wherever the user clicked to finish polyline
+            event.target.dispatchEvent(new MouseEvent("dblclick", event));
+          }
         })
       }
       
