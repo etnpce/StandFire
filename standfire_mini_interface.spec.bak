@@ -3,7 +3,7 @@
 block_cipher = None
 
 a = Analysis(['standfire_mini_interface.py'],
-             pathex=[''],
+             pathex=['/Home/FireDynamics/StandFire'],
              binaries=[],
              datas=[],
              hiddenimports=["_tkinter","pandas._libs.skiplist","pandas._libs.tslibs.np_datetime","pandas._libs.tslibs.nattype"],

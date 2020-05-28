@@ -8,7 +8,97 @@
       * {
         box-sizing: border-box;
       }
+
+      html {
+        font-size:25px;
+    }
+
+      summary {
+        outline:none;
+      }
+
+      details[open] summary ~ *{
+        animation: sweep .5s ease-in-out;
+      }
+
+      @keyframes sweep {
+        0% {opacity:0; margin-left:-10px;}
+        100% {opacity:1; margin-left:0px;}
+      }
+
+      .title_and_icon {
+        display:flex;
+        align-items:center;
+      }
+
+      .setBold {
+        font-weight:bold;
+      }
+
+      input[type=text] {
+        padding:6px 10px;
+        border:3px solid #A9A9A9;
+        margin:3px 5px;
+        border-radius:4px;
+        transition:1s;
+        outline:none;
+        font-size:16px;
+      }
+
+       input[type=text]:focus {
+        border:3px solid #555;
+      }
+
+      input[type=number] {
+        padding:6px 10px;
+        margin:3px 5px;
+        border:3px solid #A9A9A9;
+        border-radius:4px;
+        transition:1s;
+        outline:none;
+        font-size:16px;
+      }
+
+      input[type=number]:focus {
+        border:3px solid #555;
+      }
+
+       select {
+        padding:2px 4px;
+        border:3px solid #A9A9A9;
+        border-radius:4px;
+        background-color:#f1f1f1;
+        font-size:16px;
+        margin:3px 5px;
+      }
       
+      .file_submit {
+         font-size:16px;
+         margin:3px 5px;
+      }
+
+      #submit_button{
+        background-color:#4CAF50;
+        border:none;
+        color:white;
+        padding:10px 25px;
+        font-size:20px;
+        text-align:center;
+        display:inline-block;
+        border-radius:15px;
+        box-shadow: 0 5px #999;
+        cursor:pointer;
+        
+      }
+
+      #submit_button:hover {background-color:#3e8e41;}
+
+         #submit_button:active {
+        background-color:#3e8e41;
+        box-shadow:0 2px #666;
+        transform:translateY(4px);
+      }
+
       .row::after {
         content: "";
         clear: both;
@@ -17,71 +107,92 @@
       
       [class*="col-"] {
         float: left;
-        padding: 10px;
+        padding: 5px;
       }
       
       #ground_fuel_labels {
         text-align:right;
-        line-height: 133%;
+        line-height: 160%;
       }
     </style>
   </head>
   <body>
+    <div class="title_and_icon">
+      <img src="sf_icon_64.ico" id="standfire_icon">
+      <h1 id="standTitle"><strong>STANDFIRE</strong></h1>
+    </div>
     <form action = "javascript:void(0)" method="post" enctype="multipart/form-data" target="_blank" accept-charset="UTF-8">
-      <label for = 'title_input'> Run Title: </label>
-      <input type="text" id='title_input' name='title' required><br>
-      <label> Simulation Length: <input type='number' id='time_span_input' name='time_span' min='1' step = '1' value="300" required> seconds</label>
+      <table>
+        <tr>
+          <td class="setBold" for = 'title_input'> Run Title: </td>
+          <td><input style="margin:1px 5px" type="text" id='title_input' name='title' required></td>
+        </tr>
+        <tr>
+          <td class="setBold">Simulation Length:</td> 
+          <td><input type='number' id='time_span_input' name='time_span' min='1' step = '1' value="300" required> seconds</td>
+        </tr>
+      </table>   
       <fieldset>
-        <legend>Canopy Fuels</legend><br>
-        <label> FVS Keyword File: <input type="file" name="fvs_keyword_file" required></label><br>
-        <label> FVS Variant:
-          <select name = 'fvs_variant' required>
-            <option value="ne">Northeast (ne)</option>
-            <option value="wcc">Westside Cascades (wcc)</option>
-            <option value="iec" selected>Inland Empire (iec)</option>
-            <option value="sn">Southern (sn)</option>
-            <option value="ls">Lake States (ls)</option>
-            <option value="utc">Utah (utc)</option>
-            <option value="wsc">Western Sierra Nevada (wsc)</option>
-            <option value="crc">Central Rockies (crc)</option>
-            <option value="cac">Inland CA and Southern Cascades (cac)</option>
-            <option value="soc">SORNEC (soc)</option>
-            <option value="cs">Central States (cs)</option>
-            <option value="ktc">KooKanTL (ktc)</option>
-            <option value="cic">Central Idaho (cic)</option>
-            <option value="pnc">Pacific Northwest Coast (pnc)</option>
-            <option value="emc">Eastern Montana (emc)</option>
-            <option value="ttc">Tetons (ttc)</option>
-            <option value="ecc">Eastern Cascades (ecc)</option>
-            <option value="ak">Southeast Alaska and Costal BC (ak)</option>
-            <option value="ncc">Klamath Mountains (ncc)</option>
-            <option value="bmc">Blue Mountains (bmc)</option>
-          </select></label>
-          <label> Simulation Year: <input type="number" name="year" min="2000" step="10" value="2020" required></label>
+        <legend class="setBold">Canopy Fuels</legend><br>
+        <table>
+          <tr>
+            <td class="setBold"> FVS Keyword File:</td> 
+            <td><input class="file_submit" type="file" name="fvs_keyword_file" required></td>
+          </tr>
+          <tr>
+            <td class="setBold">FVS Variant</td>
+            <td><select name = 'fvs_variant' required>
+              <option value="ne">Northeast (ne)</option>
+              <option value="wcc">Westside Cascades (wcc)</option>
+              <option value="iec" selected>Inland Empire (iec)</option>
+              <option value="sn">Southern (sn)</option>
+              <option value="ls">Lake States (ls)</option>
+              <option value="utc">Utah (utc)</option>
+              <option value="wsc">Western Sierra Nevada (wsc)</option>
+              <option value="crc">Central Rockies (crc)</option>
+              <option value="cac">Inland CA and Southern Cascades (cac)</option>
+              <option value="soc">SORNEC (soc)</option>
+              <option value="cs">Central States (cs)</option>
+              <option value="ktc">KooKanTL (ktc)</option>
+              <option value="cic">Central Idaho (cic)</option>
+              <option value="pnc">Pacific Northwest Coast (pnc)</option>
+              <option value="emc">Eastern Montana (emc)</option>
+              <option value="ttc">Tetons (ttc)</option>
+              <option value="ecc">Eastern Cascades (ecc)</option>
+              <option value="ak">Southeast Alaska and Costal BC (ak)</option>
+              <option value="ncc">Klamath Mountains (ncc)</option>
+              <option value="bmc">Blue Mountains (bmc)</option>
+            </select></td>
+          </tr>
+          <tr>
+            <td class="setBold"> Simulation Year:</td> 
+            <td><input type="number" name="year" min="2000" step="10" value="2020" required></td>
+          </tr>
+        </table> 
       </fieldset>
       <br>
       <details>
-        <summary> LiDar:<br></summary>
+        <summary class="setBold"> LiDar:<br></summary>
         <fieldset>
-          Leave empty for none.<br>
-          <label> LiDar shapefile: <input type="file" name="lidar_file"></label><br>
+          <span class="setBold">Leave empty for none.</span><br>
+          <label> LiDar shapefile: <input class="file_submit" type="file" name="lidar_file"></label><br>
         </fieldset>
       </details>
       <br>
       <details>
-        <summary> Surface Fuels:<br></summary>
+        <summary class="setBold"> Surface Fuels:<br></summary>
         <fieldset>
           <div class="row">
             <div class = "col-" id='ground_fuel_labels'>
               <br>
-              height (m):<br>
-              load (kg/m^2):<br>
+              Height (m):<br>
+              Load (kg/m<sup>2</sup>):<br>
               SAV:<br>
-              cover(%):<br>
-              patch size (m):<br>
+              Cover (%):<br>
+              Patch Size (m):<br>
               Live Moisture Content (%):<br>
               Dead Moisture Content (%):<br>
-              %Dead:
+              % Dead:
             </div>
             <div class = "col-">
               Shrubs:<br>
@@ -112,7 +223,7 @@
               <input type="number" name="litter_sav" min="0" step="any" value="2000"><br>
               <input type="number" name="litter_cover" min="0" max="100" step="any" value="100"><br>
               <input type="number" name="litter_patch_size" step="any" value="-1"><br>
-              <input disabled><br>
+              <input type="number" name="litter_live_mc" min="0" max="100" step="any" value="0" disabled><br>
               <input type="number" name="litter_dead_mc" min="0" max="100" step="any" value="40"><br>
               <input type="number" name="litter_percent_dead" min="100" max="100" step="any" value="100" disabled>
             </div>
@@ -122,43 +233,118 @@
       </details>
       <br>
       <details>
-        <summary> Simulation Area:<br></summary>
+        <summary class="setBold"> Simulation Area:<br></summary>
         <fieldset>
-          Size: (<label>X: <input type="number" name="size_x" min="0" step="1" value="160" required></label>, <label>Y: <input type="number" name="size_y" min="0" step="1" value="90" required></label><label>Z: <input type="number" name="size_z" min="0" step="1" value="50" required></label>)<br>
-          <label>Resolution (m): <input type="number" name="resolution" value="1" min="0.01" step="any" required></label>
-          <label>Number Of Meshes: <input type="number" name="n_meshes" value="1" min="1" step="1" required></label><br>
+          <table>
+            <tr>
+              <td>Size:</td>
+            </tr>
+            <tr>
+              <td>&emsp;&emsp;X:</td> 
+              <td><input type="number" name="size_x" min="0" step="1" value="160" required></td>
+            </tr>
+            <tr>
+              <td>&emsp;&emsp;Y:</td> 
+              <td><input type="number" name="size_y" min="0" step="1" value="90" required></td>
+            </tr>
+            <tr>  
+              <td>&emsp;&emsp;Z:</td> 
+              <td><input type="number" name="size_z" min="0" step="1" value="50" required></td>
+            </tr>
+          </table>
+          <table>
+            <tr>  
+              <td>Resolution (m):</td> 
+              <td><input type="number" name="resolution" value="1" min="0.01" step="any" required></td>
+            </tr>
+            <tr>
+              <td>Number Of Meshes:</td> 
+              <td><input type="number" name="n_meshes" value="1" min="1" step="1" required></td>
+            </tr>
+          </table>
         </fieldset>
       </details>
       <br>
       <details>
-        <summary> Weather:<br></summary>
+        <summary class="setBold"> Weather:<br></summary>
         <fieldset>
-          <label>Wind Speed (m/s): <input type=number name=wind_speed min=0 value=8.94 step=any required></label><br>
-          <label>Ambient Temperature (&deg;C): <input type=number name=temperature value=30 step=any required></label><br>
+          <table>
+            <tr>
+              <td>Wind Speed (m/s):</td> 
+              <td><input type=number name=wind_speed min=0 value=8.94 step=any required></td>
+            </tr>
+            <tr> 
+              <td>Ambient Temperature (&deg;C):</td> 
+              <td><input type=number name=temperature value=30 step=any required></td>
+            </tr>
+           </table>   
         </fieldset>
       </details>
       <br>
       <details>
-        <summary> Ignition fire:<br></summary>
-        Note: Origin, Size, and Time have dyamic defaults when left blank<br>
+        <summary class="setBold"> Ignition fire:<br></summary>
+        <span class="setBold">Note:</span> Origin, Size, and Time have dyamic defaults when left blank<br>
         <fieldset>
-          Origin: (<label>X: <input type=number name=ignite_x min=0 step=1></label>, <label>Y: <input type=number name=ignite_y min=0 step=1></label>)<br>
-          Size: (<label>Width: <input type=number name=ignite_width min=0 step=1></label>, <label>Length: <input type=number name=ignite_length min=0 step=1></label>)<br>
-          Time: (<label>Start: <input type=number name=ignite_start min=0 step=1></label>, <label>End: <input type=number name=ignite_end min=0 step=1></label>)<br>
-          <label>Heat Release Rate (kW/m&sup2;): <input type=number name=ignite_hrr min=0 value=1000 step=any required></label><br>
+          Origin:<br>
+          <table>
+            <tr>
+              <td>&emsp;&emsp;X:</td> 
+              <td><input type=number name=ignite_x min=0 step=1></td>
+            </tr>
+            <tr>  
+              <td>&emsp;&emsp;Y:</td> 
+              <td><input type=number name=ignite_y min=0 step=1></td>
+            </tr>
+          </table>    
+          Size:<br>
+          <table>
+            <tr>
+              <td>&emsp;&emsp;Width:</td> 
+              <td><input type=number name=ignite_width min=0 step=1></td>
+            </tr>
+            <tr>  
+              <td>&emsp;&emsp;Length:</td> 
+              <td><input type=number name=ignite_length min=0 step=1></td>
+            </tr>
+          </table>    
+          Time:<br>
+          <table>
+            <tr>
+              <td>&emsp;&emsp;Start:</td> 
+              <td><input type=number name=ignite_start min=0 step=1></td>
+            </tr>
+            <tr>  
+              <td>&emsp;&emsp;End:</td> 
+              <td><input type=number name=ignite_end min=0 step=1></td>
+            </tr>
+          </table>
+          <table>
+            <tr>
+              <td>Heat Release Rate (kW/m&sup2;):</td> 
+              <td><input type=number name=ignite_hrr min=0 value=1000 step=any required></td>
+            </tr>
+          </table>
         </fieldset>
       </details>
       <br>
       <details>
-        <summary> Treatments:<br></summary>
-        Note: Leave blank to not apply treatment<br>
+        <summary class="setBold"> Treatments:<br></summary>
+        <span class="setBold">Note:</span> Leave blank to not apply treatment<br>
         <fieldset>
-          <label>Crown spacing (m):<input type=number name=treat_crown min=0 step=any></label>
-          <label>Prune Height (m):<input type=number name=treat_height min=0 step=any></label>
+          <table>
+            <tr>
+              <td>Crown spacing (m):</td>
+              <td><input type=number name=treat_crown min=0 step=any></td>
+            </tr>
+            <tr>  
+              <td>Prune Height (m):</td>
+              <td><input type=number name=treat_height min=0 step=any></td>
+            </tr>
+          </table>    
         </fieldset>
       </details>
       <br>
-      <input type = "submit" value='Generate'>
+      <input id="submit_button" type = "submit" value='Generate'>
     </form>
   </body>
 </html>
