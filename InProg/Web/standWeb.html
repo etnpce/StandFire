@@ -662,17 +662,6 @@
           }
         })
       }
-
-      function get_Topography() {
-      	const http = new XMLHttpRequest()
-      	const url = 'https://landfire.cr.usgs.gov/requestValidationServiceClient/RequestValidationServiceProxy/processAOI2.jsp?TOP=north&BOTTOM=south&LEFT=west&RIGHT=east&LAYER_IDS=F0A08XZ&CHUNK_SIZE=250&JSON=true'
-      	
-        http.open("GET", url)
-        http.send()
-        response = http.responseText
-        http.onload = () => console.log(http.responseText)
-
-      }
       
     </script>
     <script async defer
