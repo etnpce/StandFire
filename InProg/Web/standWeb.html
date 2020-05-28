@@ -2,15 +2,63 @@
 <html>
   <head>
     <title>StandFire - LandFire (In Progress)</title>
-    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
     <meta charset="utf-8">
     <style>
-      #map {
-        height: 100%;
+
+
+      .title_and_icon {
+      	display:flex;
+      	align-items: center;
       }
-    
+
+      #map {
+
+      	height:100%;
+      	width:100%;
+      }
+
+
       #maprow {
         height: 75%;
+      }
+
+      
+
+      input[type=text] {
+      	padding:6px 10px;
+      	border:3px solid #A9A9A9;
+      	margin:3px 0;
+      	border-radius:4px;
+      	transition:1s;
+      	outline:none;
+      	font-size:16px;
+      }
+
+      input[type=text]:focus {
+      	border:3px solid #555;
+      }
+
+      input[type=number] {
+      	padding:6px 10px;
+      	margin:1px 5px;
+      	border:3px solid #A9A9A9;
+      	border-radius:4px;
+      	transition:1s;
+      	outline:none;
+      	font-size:16px;
+      }
+
+      input[type=number]:focus {
+      	border:3px solid #555;
+      }
+
+      select {
+      	padding:6px 12px;
+      	border:3px solid #A9A9A9;
+      	border-radius:4px;
+      	background-color:#f1f1f1;
+      	font-size:16px;
       }
       
       * {
@@ -28,7 +76,7 @@
         padding: 10px;
       }
         
-      .col-1 {width: 8.33%;}
+      .col-1 {width: 8.6%;}
       .col-2 {width: 16.66%;}
       .col-3 {width: 25%;}
       .col-4 {width: 33.33%;}
@@ -48,12 +96,56 @@
       }  
       
       html {
-        --font-family: "Lucida Sans", sans-serif;
+        font-size:25px;
+
       }
+
+      summary {
+      	outline:none;
+      }
+
       
+      details[open] summary ~ *{
+        animation: sweep .5s ease-in-out;
+      }
+
+      @keyframes sweep {
+        0% {opacity:0; margin-left:-10px;}
+        100% {opacity:1; margin-left:0px;}
+      }
+
+      .setBold {
+      	font-weight:bold;
+      }
+
       #igniters_list {
         overflow-y:scroll;
         height: -webkit-fill-available;
+      }
+
+
+      #submit_button{
+      	background-color:#4CAF50;
+      	border:none;
+      	color:white;
+      	padding:10px 25px;
+      	font-size:20px;
+      	text-align:center;
+      	display:inline-block;
+      	border-radius:15px;
+      	box-shadow: 0 5px #999;
+      	cursor:pointer;
+      	float:right;
+      }
+
+
+      #submit_button:hover {background-color:#3e8e41;}
+
+
+      #submit_button:active {
+      	background-color:#3e8e41;
+      	box-shadow:0 2px #666;
+      	transform:translateY(4px);
       }
       
       .limit_height {
@@ -62,66 +154,147 @@
     </style>
   </head>
   <body>
-    <form action = "" method="get"> 
+  	<div class="title_and_icon">
+      	<img src="sf_icon_64.ico" id="standfire_icon">
+      	<h1 id="standTitle"><strong>STANDFIRE</strong></h1>
+      </div>
+    <form action = "" method="get">
       <div id = 'maprow' class = 'row'>
-        <div id="map" class = 'col-6'></div>
+       <div id="map" class = 'col-6'></div>
         <div class = 'col-6 limit_height'>
-            Bounds (Lat/Lng):<br>
-              &nbsp;&nbsp;NE Corner: (<label for = "rect_bound1_lat">Latitude:</label> <input id = "rect_bound1_lat" name = "rectBound1Lat" type = "number" min = "-90" max = "90" step = "any" required onchange="onRectBoundInput()">,<label for = "rect_bound1_lng">Longitude:</label><input id = "rect_bound1_lng" name="rectBound1Lng" type="number" min = "-180" max = "180" step = "any" required onchange="onRectBoundInput()">)<br>
-              &nbsp;&nbsp;SW Corner: (<label for = "rect_bound2_lat">Latitude:</label> <input id = "rect_bound2_lat" name = "rectBound2Lat" type = "number" min = "-90" max = "90" step = "any" required onchange="onRectBoundInput()">,<label for = "rect_bound2_lng">Longitude:</label><input id = "rect_bound2_lng" name="rectBound2Lng" type="number" min = "-180" max = "180" step = "any" required onchange="onRectBoundInput()">)<br>
+        <fieldset>
+        	<table>
+        		<tr>
+            		<td class='setBold'>Bounds (Lat/Lng):</td>
+            	</tr>
+            	<tr>
+            		<td class='setBold'>&nbsp;&nbsp;NE Corner:</td>
+            	</tr>
+            	<tr>
+					<td for = "rect_bound1_lat">&emsp;&emsp;Latitude:</td> 
+            		<td><input id = "rect_bound1_lat" name = "rectBound1Lat" type = "number" min = "-90" max = "90" step = "any" required onchange="onRectBoundInput()"></td>
+            	</tr>
+            	<tr>
+            		<td for = "rect_bound1_lng">&emsp;&emsp;Longitude:</td>
+            		<td><input id = "rect_bound1_lng" name="rectBound1Lng" type="number" min = "-180" max = "180" step = "any" required onchange="onRectBoundInput()"></td>
+            	</tr>
+            	<tr>
+					<td class='setBold'>&nbsp;&nbsp;SW Corner:</td>
+				</tr>
+				<tr>
+					<td for = "rect_bound2_lat">&emsp;&emsp;Latitude:</td> 
+            		<td><input id = "rect_bound2_lat" name = "rectBound2Lat" type = "number" min = "-90" max = "90" step = "any" required onchange="onRectBoundInput()"></td>
+            	</tr>
+            	<tr>
+            		<td for = "rect_bound2_lng">&emsp;&emsp;Longitude:</td>
+            		<td><input id = "rect_bound2_lng" name="rectBound2Lng" type="number" min = "-180" max = "180" step = "any" required onchange="onRectBoundInput()"></td>
+            	</tr>
+            </table>
+        </fieldset>
             <br>
-            <label> Ignition Time Increment: <input type='number' id='ignition_time_inc' value=0 step = '1'></label><br>
-            Igniters (use map to create):
-              <input type = 'hidden' name = 'n_igniters' id = 'n_igniters_input' value='0'>
-              <ol id = 'igniters_list' class = 'limit_height'>
-                <!-- Dynamically filled -->
-              </ol>
+        <fieldset>
+            <table>
+            	<tr>
+					<td class='setBold'> Ignition Time Increment:</td> 
+					<td><input type='number' id='ignition_time_inc' value=0 step = '1'></td>
+				</tr>
+				<tr>
+				 	<td><span class='setBold'>Igniters</span> (use map to create):</td>
+             		<td><input type = 'hidden' name = 'n_igniters' id = 'n_igniters_input' value='0'></td>
+              		<td><ol id = 'igniters_list' class = 'limit_height'>
+                	<!-- Dynamically filled -->
+              		</ol></td>
+              	</tr>
+              </table>
+        </fieldset>
         </div>
       </div>
-      <label for = 'title_input'> Run Title: </label>
-      <input type="text" id='title_input' name='title' required><br>
-      <label> Simulation Length: <input type='number' id='time_span_input' name='time_span' min='1' step = '1' value=300 required> seconds</label>
       <br>
-      
-      Wind Speed: (<label for = 'wind_speed_n_input'>Northward: </label><input type = "number" id='wind_speed_n_input' name='wind_speed_n' step='any' value=0 required>, <label for = 'wind_speed_e_input'>Eastward: </label><input type = "number" id='wind_speed_e_input' name='wind_speed_e' step='any' value=0 required>)<br>
-      
-      <details>
-      <summary> Humidity:<br></summary>
       <fieldset>
-        <label for = 'humidity_d1hr_input'> Dead&lt;1Hour: </label><input type = "number" value = '0.06' min='0' max ='1' step = 'any' name = 'humidity_d1hr' id='humidity_d1hr_input' required><br>
-        <label for = 'humidity_d10hr_input'> Dead&lt;10Hours: </label><input type = "number" value = '0.07' min='0' max ='1' step = 'any' name = 'humidity_d10hr' id='humidity_d10hr_input' required><br>
-        <label for = 'humidity_d100hr_input'> Dead&lt;100Hours: </label><input type = "number" value = '0.08' min='0' max ='1' step = 'any' name = 'humidity_d100hr' id='humidity_d100hr_input' required><br>
-        <label for = 'humidity_herb_input'> Herbaceous: </label><input type = "number" value = '0.60' min='0' max ='1' step = 'any' name = 'humidity_herb' id='humidity_herb_input' required><br>
-        <label for = 'humidity_wood_input'> Wooded: </label><input type = "number" value = '0.90' min='0' max ='1' step = 'any' name = 'humidity_wood' id='humidity_wood_input' required><br>
+      	<table>
+      		<tr>
+      			<td class='setBold' for = 'title_input'> Run Title:</td>
+      			<td><input style="margin:1px 4px" type="text" id='title_input' name='title' required></td>
+      		</tr>
+      		<tr>
+      			<td class='setBold'>Simulation Length:</td> 
+      			<td><input type='number' id='time_span_input' name='time_span' min='1' step = '1' value=300 required> seconds</td>
+      		</tr>
+      		<tr>
+      			<td class='setBold'>Wind Speed:</td>
+      		</tr>
+      		<tr> 
+      			<td for = 'wind_speed_n_input'>&emsp;&emsp;Northward: </td>
+      			<td><input type = "number" id='wind_speed_n_input' name='wind_speed_n' step='any' value=0 required></td>
+      		</tr>
+      		<tr> 
+      			<td for = 'wind_speed_e_input'>&emsp;&emsp;Eastward: </td>
+      			<td><input type = "number" id='wind_speed_e_input' name='wind_speed_e' step='any' value=0 required></td>
+      		</tr>
+      	</table>
+      	<details>
+      	<summary class='setBold'> Humidity:<br></summary>
+      	<fieldset>
+      		<table>
+      			<tr>
+        			<td for = 'humidity_d1hr_input'> Dead&lt;1Hour: </td>
+        			<td><input type = "number" value = '0.06' min='0' max ='1' step = 'any' name = 'humidity_d1hr' id='humidity_d1hr_input' required></td>
+        		</tr>
+        		<tr>
+        			<td for = 'humidity_d10hr_input'> Dead&lt;10Hours: </td>
+        			<td><input type = "number" value = '0.07' min='0' max ='1' step = 'any' name = 'humidity_d10hr' id='humidity_d10hr_input' required></td>
+        		</tr>
+        		<tr>
+        			<td for = 'humidity_d100hr_input'> Dead&lt;100Hours: </td>
+        			<td><input type = "number" value = '0.08' min='0' max ='1' step = 'any' name = 'humidity_d100hr' id='humidity_d100hr_input' required></td>
+        		</tr>
+        		<tr>
+        			<td for = 'humidity_herb_input'> Herbaceous: </td>
+        			<td><input type = "number" value = '0.60' min='0' max ='1' step = 'any' name = 'humidity_herb' id='humidity_herb_input' required></td>
+        		</tr>
+        		<tr>
+        			<td for = 'humidity_wood_input'> Wooded: </td>
+        			<td><input type = "number" value = '0.90' min='0' max ='1' step = 'any' name = 'humidity_wood' id='humidity_wood_input' required></td>
+                </tr>
+            </table>
+      	</fieldset>
+		</details>
+      	<details>
+        	<summary class='setBold'>Advanced Options:<br></summary>
+        	<fieldset>
+        		<table>
+        			<tr>
+            			<td for = 'levelset_mode_select'> LevelSet Mode: </td>
+            			<td><select id = 'levelset_mode_select' name = 'levelset_mode'>
+              				<option value="simple" selected>Simple</option>
+              				<option value="simple_wind">Simple With Wind Calculation</option>
+              				<option value="coupled_no_te">Full Without Thermal Elements</option>
+              				<option value="full">Full</option>
+            			</select></td>
+            		</tr>
+            		<tr>
+            			<td for ='n_meshes_input'> Number of cores to use for simulation: </td>
+            			<td><input type=number id='n_meshes_input' name='n_meshes' min = '1' value='1' step='1'></td>
+            		</tr>
+            		<tr>
+            			<td for='mesh_res_select'>Mesh Resolution: </td>
+            			<td><select name = 'mesh_res' id='mesh_res_select'>
+              				<option value="1">1</option>
+              				<option value="2">2</option>
+              				<option value="3">3</option>
+              				<option value="5">5</option>
+              				<option value="6">6</option>
+              				<option value="10" selected>10</option>
+              				<option value="15">15</option>
+              				<option value="30">30</option>
+            			</select></td>
+            		</tr>
+            	</table>
+        		</fieldset>
+      	</details>
       </fieldset>
-      </details>
-      <details>
-        <summary>Advanced Options:<br></summary>
-        <fieldset>
-            <label for = 'levelset_mode_select'> LevelSet Mode: </label>
-            <select id = 'levelset_mode_select' name = 'levelset_mode'>
-              <option value="simple" selected>Simple</option>
-              <option value="simple_wind">Simple With Wind Calculation</option>
-              <option value="coupled_no_te">Full Without Thermal Elements</option>
-              <option value="full">Full</option>
-            </select><br>
-            <label for ='n_meshes_input'> Number of cores to use for simulation: </label>
-            <input type=number id='n_meshes_input' name='n_meshes' min = '1' value='1' step='1'><br>
-            <label for='mesh_res_select'>Mesh Resolution: </label>
-            <select name = 'mesh_res' id='mesh_res_select'>
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-              <option value="5">5</option>
-              <option value="6">6</option>
-              <option value="10" selected>10</option>
-              <option value="15">15</option>
-              <option value="30">30</option>
-            </select><br>
-        </fieldset>
-      </details>
       <br>
-      <input type = "submit" value='Generate'>
+      <input id="submit_button" type = "submit" value='Generate'>
     </form>
     <script>
       //Called by the deferred load script
@@ -296,7 +469,7 @@
         //Create (Latitude: _, Longitude: _, Ignition Time: _) with _ meaning inputs, and return the input elements
         function createTripleInput(parentSet, initpos, initIgnTime, postfix){
           let set = parentSet // Too lazy to rename in body
-          set.append('(')
+         // set.append('(')
           let labelLat = c(set, 'label')
           labelLat.append('Latitude: ')
           
@@ -307,8 +480,8 @@
           inputLat.step = 'any'
           inputLat.name = 'ignition_lat_'+postfix
           inputLat.value = initpos.lat()
-          
-          set.append(', ')
+         
+          set.append(",")
           let labelLng = c(set, 'label')
           labelLng.append("Longitude: ")
           
@@ -386,7 +559,6 @@
                 
                 set.append('Start Point: ');
                 ([line.input_start_lat, line.input_start_lng, line.input_start_ign_time] = createTripleInput(set, path.getAt(0), line.ign_start_time, "start_"+(i+1)))
-                set.append(',')
                 c(set, 'br')
                 set.append('End Point: ');
                 ([line.input_end_lat, line.input_end_lng, line.input_end_ign_time] = createTripleInput(set, path.getAt(1), line.ign_end_time, "end_" + (i+1)))
@@ -435,6 +607,10 @@
             });
             prevRect.addListener('bounds_changed', rectangleMoved);
           }
+          //Grab data from 
+          	let wsdlUrlValidationService ='https://landfire.cr.usgs.gov/requestValidationService/wsdl/RequestValidationService.wsdl';
+
+
         }
         
         //Ugly hack because drawingManager Control tool-tips aren't in the api

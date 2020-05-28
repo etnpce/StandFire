@@ -52,13 +52,13 @@ __version__ = "1.1.4a" # Previous version: "1.1.3a"
 #   import os, timeit). must be on seperate lines
 import os
 #import sys
+import Tkinter as tk
 import time
 import timeit
 import shutil
 import tkFileDialog
 import tkMessageBox
 import ttk
-import Tkinter as tk
 import platform
 
 # import standfire modules - works in both the interpreter and the compiler
